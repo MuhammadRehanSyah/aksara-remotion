@@ -28,6 +28,7 @@ import { FeedHariGuru2, FeedHariGuru3 } from "./feed-hari-guru/FeedHariGuruSerie
 import { FeedHariGuru2Short, FeedHariGuru3Short, SERIES10_FPS, SERIES10_FRAMES, SERIES10_WIDTH, SERIES10_HEIGHT } from "./feed-hari-guru/FeedHariGuruSeries10";
 import { FeedPuncakBulanGuru } from "./feed-hari-guru/FeedPuncakBulanGuru";
 import { FPS as FEED_FPS, HEIGHT as FEED_H, TOTAL_FRAMES as FEED_FRAMES, WIDTH as FEED_W } from "./feed-hari-guru/timings";
+import { Trial3D } from "./trial3d/TrialBridge";
 
 export const RemotionRoot = () => {
 	return (
@@ -199,6 +200,14 @@ export const RemotionRoot = () => {
 				fps={FEED_FPS}
 				width={FEED_W}
 				height={FEED_H}
+			/>
+			<Composition
+				id="Trial3D"
+				component={Trial3D}
+				durationInFrames={360}
+				fps={30}
+				width={1080}
+				height={1920}
 			/>
 		</>
 	);

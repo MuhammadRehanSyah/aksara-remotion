@@ -1,5 +1,6 @@
 node_modules/
 out/
+.tmp-bundle-tmp/
 .DS_Store
 *.log
 .env
