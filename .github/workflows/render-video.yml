@@ -1,0 +1,32 @@
+name: Render video
+
+on:
+  workflow_dispatch:
+    inputs:
+      composition:
+        description: "Composition ID (contoh: Reels004)"
+        required: true
+        default: "Reels004"
+      output:
+        description: "Nama file hasil"
+        required: false
+        default: "video.mp4"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx remotion browser ensure
+      - run: npx remotion render src/index.js ${{ inputs.composition }} out/${{ inputs.output }} --codec h264 --crf 16 --is-production=false
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rendered-video
+          path: out/${{ inputs.output }}
+          if-no-files-found: error
