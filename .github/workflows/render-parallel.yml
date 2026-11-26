@@ -59,7 +59,7 @@ jobs:
     env:
       COMPOSITION: ${{ inputs.composition }}
       CHUNK_COUNT: ${{ inputs.chunks }}
-      OUTPUT: ${{ inputs.output }}
+      OUTPUT: out/${{ inputs.output }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
