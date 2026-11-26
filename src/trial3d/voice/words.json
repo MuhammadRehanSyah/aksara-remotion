@@ -1,0 +1,110 @@
+{
+ "text": "Di sebuah kota kecil, sepasukan perajurit berbaris melewati jembatan. Langkah mereka kompak menuju jantung kota di bawah langit biru yang cerah.",
+ "words": [
+  {
+   "word": "Di",
+   "start": 0.0,
+   "end": 0.28
+  },
+  {
+   "word": "sebuah",
+   "start": 0.28,
+   "end": 0.56
+  },
+  {
+   "word": "kota",
+   "start": 0.56,
+   "end": 0.78
+  },
+  {
+   "word": "kecil,",
+   "start": 0.78,
+   "end": 1.38
+  },
+  {
+   "word": "sepasukan",
+   "start": 1.76,
+   "end": 2.18
+  },
+  {
+   "word": "perajurit",
+   "start": 2.18,
+   "end": 2.7
+  },
+  {
+   "word": "berbaris",
+   "start": 2.7,
+   "end": 3.24
+  },
+  {
+   "word": "melewati",
+   "start": 3.24,
+   "end": 3.7
+  },
+  {
+   "word": "jembatan.",
+   "start": 3.7,
+   "end": 4.48
+  },
+  {
+   "word": "Langkah",
+   "start": 4.84,
+   "end": 5.12
+  },
+  {
+   "word": "mereka",
+   "start": 5.12,
+   "end": 5.42
+  },
+  {
+   "word": "kompak",
+   "start": 5.42,
+   "end": 6.12
+  },
+  {
+   "word": "menuju",
+   "start": 6.12,
+   "end": 6.7
+  },
+  {
+   "word": "jantung",
+   "start": 6.7,
+   "end": 7.16
+  },
+  {
+   "word": "kota",
+   "start": 7.16,
+   "end": 7.76
+  },
+  {
+   "word": "di",
+   "start": 7.76,
+   "end": 8.08
+  },
+  {
+   "word": "bawah",
+   "start": 8.08,
+   "end": 8.36
+  },
+  {
+   "word": "langit",
+   "start": 8.36,
+   "end": 8.7
+  },
+  {
+   "word": "biru",
+   "start": 8.7,
+   "end": 8.98
+  },
+  {
+   "word": "yang",
+   "start": 8.98,
+   "end": 9.18
+  },
+  {
+   "word": "cerah.",
+   "start": 9.18,
+   "end": 9.52
+  }
+ ]
+}

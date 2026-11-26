@@ -9,7 +9,7 @@
 // Post chain perlu diselidiki terpisah sebelum dipakai di video sungguhan.
 import React, { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { AbsoluteFill, continueRender, delayRender, useCurrentFrame } from "remotion";
+import { AbsoluteFill, Audio, continueRender, delayRender, staticFile, useCurrentFrame } from "remotion";
 import { ThreeCanvas } from "@remotion/three";
 import { useThree } from "@react-three/fiber";
 import { World, loadKit } from "./world";
@@ -52,6 +52,8 @@ export const Trial3D: React.FC = () => {
 			>
 				<Inner kit={kit} />
 			</ThreeCanvas>
+			{/* Audio campuran 12 dtk (VO + musik mars + SFX), public/trial3d/audio/mix.wav */}
+			<Audio src={staticFile("trial3d/audio/mix.wav")} />
 		</AbsoluteFill>
 	);
 };
