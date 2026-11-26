@@ -1,0 +1,1 @@
+Nomor lima: F4. Ulangi perintah terakhir. Habis mewarnai satu sel, tekan F4 di sel lain — warnanya ikut, tanpa mengulang dari awal.

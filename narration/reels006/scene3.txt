@@ -1,0 +1,1 @@
+Ketik "Andi" di kolom sebelahnya, lalu tekan Control E. Excel langsung menebak polanya dan mengisi semua nama depan sendiri. Lanjut kolom berikutnya: ketik "Pratama", tekan Control E lagi — semua nama belakang ikut terisi.

@@ -1,0 +1,1 @@
+Nomor tiga: Control plus tombol panah. Kursor langsung loncat ke ujung data — dari baris satu ke baris seribu dalam sekejap, tanpa scroll.

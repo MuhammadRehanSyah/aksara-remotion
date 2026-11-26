@@ -1,0 +1,1 @@
+Selesai! Kalau Excel kamu versi lama dan belum ada XLOOKUP, pakai VLOOKUP dengan cara yang sama. Simpan video ini biar tidak lupa, dan tulis di komentar: kamu tim VLOOKUP atau XLOOKUP? Ikuti Aksara Academy untuk tips Office lainnya!

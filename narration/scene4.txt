@@ -1,0 +1,1 @@
+Kedua, ketik rumusnya: sama dengan XLOOKUP, buka kurung, nama yang dicari, titik koma, kolom nama, titik koma, kolom hasil, tutup kurung. Contohnya, XLOOKUP Andi, kolom Nama, kolom Harga.
