@@ -1,0 +1,80 @@
+name: Render video (parallel)
+
+on:
+  workflow_dispatch:
+    inputs:
+      composition:
+        description: "Composition ID (contoh: Reels004)"
+        required: true
+        default: "Reels004"
+      output:
+        description: "Nama file hasil"
+        required: false
+        default: "video.mp4"
+      chunks:
+        description: "Jumlah chunk paralel (maks 20)"
+        required: false
+        default: "10"
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          python3 -c "import json; n = int('${{ inputs.chunks }}'); print('matrix=' + json.dumps({'chunk': list(range(n))}))" >> "$GITHUB_OUTPUT"
+
+  render-chunk:
+    needs: setup
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      matrix: ${{ fromJSON(needs.setup.outputs.matrix) }}
+      fail-fast: false
+    env:
+      COMPOSITION: ${{ inputs.composition }}
+      CHUNK_INDEX: ${{ matrix.chunk }}
+      CHUNK_COUNT: ${{ inputs.chunks }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx remotion browser ensure
+      - run: node scripts/render-chunk.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chunk-${{ matrix.chunk }}
+          path: out/chunks/
+          if-no-files-found: error
+
+  combine:
+    needs: render-chunk
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      COMPOSITION: ${{ inputs.composition }}
+      CHUNK_COUNT: ${{ inputs.chunks }}
+      OUTPUT: ${{ inputs.output }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: chunk-*
+          path: out/chunks/
+          merge-multiple: true
+      - run: node scripts/combine-chunks.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rendered-video
+          path: out/${{ inputs.output }}
+          if-no-files-found: error
