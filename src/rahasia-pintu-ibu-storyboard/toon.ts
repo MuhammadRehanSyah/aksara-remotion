@@ -763,6 +763,89 @@ export const bodySide = (p: Pen, o: Outfit, opts: SideOpts) => {
   p.rot = null;
 };
 
+export type BackOpts = { inner?: -1 | 0 | 1; hand?: [number, number]; seed?: number; light?: number };
+/** punggung tokoh (dilihat dari belakang, tanpa wajah): kerudung untuk Ibu, topi dari belakang untuk Raka.
+ *  `inner`: sisi lengan dalam (+1 = kanan kanvas, -1 = kiri); `hand`: titik tangan dalam (kanvas) —
+ *  dipakai agar dua tangan yang bergandengan bertemu di satu titik dunia yang sama. */
+export const bodyBack = (p: Pen, o: Outfit, opts: BackOpts = {}) => {
+  const { inner = 0, hand, seed = 1, light = DEF_LIGHT } = opts;
+  const Bd = BUILD[o.build ?? "adult"], skin = o.skin ?? SKIN;
+  const H = headBlob(seed, Bd.a, 0), W = 2 * H.a, HH = 2 * H.b, u = W / 100;
+  const sole = 975;
+  const torsoBot = sole - Bd.legs * HH;
+  const chin = torsoBot - Bd.torso * HH, hc = chin - H.b, hipY = torsoBot - 0.12 * HH;
+  const thick = thickAngle(light), ow = 5 * u;
+  const legCol = mix(o.pants, INK, 0.55), armCol = mix(o.jacket, INK, 0.5), footCol = o.boots;
+  const legW = 5.8 * u, footW = 7.5 * u;
+  p.rot = null;
+  // ---- kaki ----
+  if (o.dress) {
+    for (const side of [-1, 1]) {
+      const fx = 300 + side * 12 * u, fy = sole - 0.32 * HH;
+      p.stroke([[fx, sole - 0.4 * HH], [fx + side * u, fy]], legW, legCol);
+    }
+  } else {
+    for (const side of [-1, 1]) {
+      const hx = 300 + side * 15 * u, fx = 300 + side * 22 * u, fy = sole - 4 * u;
+      p.stroke([[hx, hipY], [(hx + fx) / 2, (hipY + fy) / 2], [fx, fy]], legW, legCol);
+      footStroke(p, [fx - side * 3 * u, fy], [fx + side * 13 * u, fy + 0.5 * u], footW, footCol);
+    }
+  }
+  // ---- badan / rok ----
+  const T: Blob = { a: ((Bd.tw / 2) * W) / 1.06, b: 0.5 * (torsoBot - (chin - 0.25 * HH)), nTop: 2.2, nBot: 2.6, egg: 0.12, asym: 0, rot: 0, noise: 0.006, seed: seed + 7 };
+  const tcx = 300, tcy = torsoBot - T.b, tp = blobPts(tcx, tcy, T);
+  if (o.dress) {
+    const D: Blob = { a: 0.5 * W * 0.98, b: 0.5 * ((sole - 0.35 * HH) - (chin - 0.2 * HH)), nTop: 2.0, nBot: 3.0, egg: 0.35, asym: 0, rot: 0, noise: 0.006, seed: seed + 9 };
+    const dp = blobPts(300, sole - 0.35 * HH - D.b, D);
+    p.gradFill(dp, o.dress!, mul(o.dress!, SH_CLOTH), light);
+    p.inkRing(dp, ow, thick);
+    const Sw: Blob = { a: 0.37 * W, b: 0.3 * HH, nTop: 2.2, nBot: 2.4, egg: 0.1, asym: 0, rot: 0, noise: 0.006, seed: seed + 8 };
+    const sp = blobPts(300, chin + 0.12 * HH, Sw);
+    p.gradFill(sp, o.jacket, mul(o.jacket, SH_CLOTH), light);
+    p.inkRing(sp, ow * 0.9, thick);
+  } else {
+    p.gradFill(tp, o.jacket, mul(o.jacket, SH_CLOTH), light);
+    p.inkRing(tp, ow, thick);
+  }
+  // ---- lengan: luar menggantung, dalam terulur ke tangan yang digenggam ----
+  const sh = (side: number): P2 => [tcx + side * 0.85 * T.a, chin + 0.12 * HH];
+  const arm = (side: number) => {
+    const S = sh(side);
+    if (side === inner && hand) {
+      const [hx, hy] = hand;
+      p.stroke(curve(S, [(S[0] + hx) / 2, (S[1] + hy) / 2 + 8 * u], [hx, hy]), 5.2 * u, armCol);
+      p.dot(hx, hy, 5.5 * u, skin);
+    } else {
+      const ex = tcx + side * (1.12 * T.a + 4 * u), hx2 = ex + side * 3 * u;
+      p.stroke(curve(S, [ex, S[1] + 0.48 * HH], [hx2, chin + 1.04 * HH]), 5.2 * u, armCol);
+      p.dot(hx2, chin + 1.04 * HH, 5.5 * u, skin);
+    }
+  };
+  arm(-1); arm(1);
+  // ---- kepala dari belakang (tanpa wajah) ----
+  if (o.hat === "kerudung") {
+    const hb: Blob = { ...H, a: H.a * 1.12, b: H.b * 1.18 };
+    const hp2 = blobPts(300, hc + 0.05 * HH, hb);
+    p.shadedFill(hp2, o.dress ?? o.jacket, mul(o.dress ?? o.jacket, SH_CLOTH), light, H.a);
+    p.inkRing(hp2, ow, thick);
+    const shawl: P2[] = [[300 - H.a * 1.05, hc + 0.3 * HH], [300 + H.a * 1.05, hc + 0.3 * HH], [300 + H.a * 0.9, chin + 0.35 * HH], [300 - H.a * 0.9, chin + 0.35 * HH]];
+    p.gradFill(shawl, o.dress ?? o.jacket, mul(o.dress ?? o.jacket, SH_CLOTH), light);
+    p.inkRing(shawl, ow * 0.9, thick);
+  } else {
+    const hp = blobPts(300, hc, H);
+    p.shadedFill(hp, skin, mul(skin, SH_SKIN), light, H.a);
+    p.inkRing(hp, ow, thick);
+    if (o.hat === "cap") {
+      // topi dari belakang: kubah hijau menutupi ubun-ubun
+      p.ell(300, hc - 0.15 * HH, H.a * 1.02, H.b * 0.62, o.cap ?? "#3a5a2e", ow * 0.8, 180, 360);
+      p.stroke([[300 - H.a * 0.95, hc - 0.08 * HH], [300 + H.a * 0.95, hc - 0.08 * HH]], 3.5 * u, INK);
+    } else if (o.hair) {
+      p.ell(300, hc - 0.2 * HH, H.a * 1.0, H.b * 0.55, o.hair, ow * 0.8, 180, 360);
+    }
+  }
+  p.rot = null;
+};
+
 /** rope + seat + seated kid on a 700 x 2300 canvas; the pivot is design (350, 20); kid drawn at 0.92 scale */
 export const swingKid = (p: Pen, o: Outfit, kick: number, expr: Expr, light = DEF_LIGHT, blink: number = 0) => {
   const rope = 1830, k = 1.1, HH = 2 * headBlob(5, BUILD[o.build ?? "adult"].a, 1).b;
@@ -1016,7 +1099,7 @@ export const ayahFigure = (p: Pen, wave = 0.5) => {
   // badan: jubah longgar emas
   p.poly([[96, 210], [204, 210], [224, 340], [236, 470], [64, 470], [76, 340]], "#f2c96a", 6);
   // lengan kiri turun, lengan kanan terangkat melambai (sudut ikut wave)
-  const wob = Math.sin(wave * Math.PI * 2) * 8;
+  const wob = Math.sin(wave * Math.PI * 2) * 12;
   p.stroke([[104, 226], [66, 300], [58, 372]], 16, "#f2c96a");
   p.stroke([[196, 226], [238, 168 - wob], [262, 108 - wob * 1.4]], 16, "#f2c96a");
   p.ell(262, 100 - wob * 1.4, 14, 14, "#ffe9bb", 4); // telapak tangan melambai

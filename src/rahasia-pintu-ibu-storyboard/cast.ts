@@ -3,7 +3,7 @@
 // di dalam cermin (tanpa wajah detail — hanya senyum tipis, tangan melambai).
 import * as THREE from "three";
 import {
-  Pen, bodyFront, bodySide, IBU, RAKA, ayahFigure, fxGlow, fxBlob, fxContact, fxShadow,
+  Pen, bodyFront, bodySide, bodyBack, IBU, RAKA, ayahFigure, fxGlow, fxBlob, fxContact, fxShadow,
   fxRain, fxKey, fxPetal, fxSoil, fxTear,
   Outfit, Expr, FrontOpts, SideOpts,
 } from "./toon";
@@ -136,6 +136,18 @@ const person = (cam: CamInfo, who: Who, x: number, y: number, z: number, view: {
   };
 };
 
+/** kartu punggung (dilihat dari belakang, tanpa wajah) — untuk E2 hal. 10.
+ *  `inner`: arah lengan dalam (+1 = ke kanan kanvas, -1 = ke kiri); `hand`: titik tangan dalam (kanvas). */
+const backPlace = (cam: CamInfo, who: Who, x: number, y: number, z: number, inner: -1 | 1, hand: [number, number], scale = 1): Place => {
+  const d = cam.pos.distanceTo(tmp.set(x, y + 1.2, z)) / scale;
+  const [w, h, k] = tier(d);
+  return {
+    key: `B|${who.okey}|${inner}`, x, y, z, scale,
+    draw: (p) => bodyBack(p, who.o, { inner, hand, seed: 3 }),
+    size: [w, h, k],
+  };
+};
+
 /** bayangan kontak tanah */
 const blob = (out: Stage, x: number, y: number, z: number, sc = 1, k = 1) => {
   const cc = "#3a3a55";
@@ -154,28 +166,32 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
   const out: Stage = { places: [], fx: [] };
   if (id === 1) {
     if (f < 270) {
-      // A1 hal. 1: lorong lebar — Ibu berlentera di tengah, Raka mengintip dari balik tangga kanan.
-      const [ix, iy, iz] = IBU_A1;
+      // A1 hal. 1: Ibu BERJALAN dengan lentera dari ujung lorong; Raka menggeser keluar dari balik tangga.
+      const [ix, iy, iz] = IBU_A1(f);
+      const walkA1 = f < 240;
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
-        { mode: "stand", expr: "stern", blink: 0 }, {}));
+        { mode: walkA1 ? "march" : "stand", phase: walkA1 ? (t * 0.6) % 1 : 0, expr: "stern", blink: 0 }, {}));
       blob(out, ix, iy, iz, 1, 0.9);
       // lentera di tangan Ibu + cahaya hangatnya
       glowFx(out, ix - 0.42, iy + 1.0, iz + 0.3, t, 1.8, "lanternA1");
-      const [rx, ry, rz] = RAKA_A1;
+      const [rx, ry, rz] = RAKA_A1(f);
       const rview = viewOf(cam, rx, rz, -1, 0);
+      const peekA1 = f < 180;
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, rview,
         { mode: "stand", expr: "nervous", blink: 0 },
-        { mode: "stand", expr: "nervous" }, 0.72));
+        { mode: peekA1 ? "stroll" : "stand", phase: peekA1 ? (t * 0.5) % 1 : 0, expr: "nervous", stride: 0.6 }, 0.72));
       blob(out, rx, ry, rz, 0.72);
     } else {
-      // A2 hal. 2: Ibu di pintu Raka memegang kunci tua BERCAHAYA; Raka berkeringat di samping.
-      const [ix, iy, iz] = IBU_A2;
+      // A2 hal. 2: Ibu BERJALAN ke pintu Raka memegang kunci tua BERCAHAYA; Raka melangkah keluar di sampingnya.
+      const [ix, iy, iz] = IBU_A2(f);
+      const walkA2 = f < 480;
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
-        { mode: "stand", expr: "stern", blink: 0 }, {}));
+        { mode: walkA2 ? "march" : "stand", phase: walkA2 ? (t * 0.9) % 1 : 0, expr: "stern", blink: 0 }, {}));
       blob(out, ix, iy, iz, 1, 0.9);
-      const [rx, ry, rz] = RAKA_A2;
+      const [rx, ry, rz] = RAKA_A2(f);
+      const stepA2 = f < 480;
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: "stand", expr: "nervous", blink: 0 }, {}, 0.72));
+        { mode: stepA2 ? "stroll" : "stand", phase: stepA2 ? (t * 0.6) % 1 : 0, expr: "nervous", blink: 0 }, {}, 0.72));
       blob(out, rx, ry, rz, 0.72);
       // kunci tua bercahaya di tangan Ibu (sisi kiri, ke arah pintu) + kilau kuat
       out.fx.push({ key: "key|old", cw: 200, ch: 120, draw: (p) => fxKey(p, false),
@@ -188,66 +204,73 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
     }
   } else if (id === 2) {
     if (f < 720) {
-      // B1 hal. 3: pagi — Ibu menuang teh di meja, Raka cemas duduk di bangku.
+      // B1 hal. 3: pagi — Ibu MENUANG teh (lengan terulur ke teko, tekuk pelan); Raka BERDIRI dari bangku dengan cemas.
       const [ix, iy, iz] = IBU_B1;
-      const view = viewOf(cam, ix, iz, 1, 0);
+      const view = viewOf(cam, ix, iz, -1, 0); // menghadap teko (barat)
+      const pour = 0.7 + 0.2 * Math.sin(t * 1.8);
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, view,
         { mode: "stand", expr: "neutral", blink: 0 },
-        { mode: "stand", expr: "neutral" }));
+        { mode: "push", pose: pour, hand: [310, 670], expr: "neutral" }));
       blob(out, ix, iy, iz, 1, 0.9);
       // tanah merah di ujung batik Ibu + sehelai kamboja di lantai
       out.fx.push({ key: "soil|batik", cw: 200, ch: 120, draw: (p) => fxSoil(p),
         x: ix + 0.2, y: iy + 0.045, z: iz + 0.5, w: 0.8, h: 0.48, flat: true, rot: 0.4 });
       out.fx.push({ key: "petal|kamboja", cw: 160, ch: 160, draw: (p) => fxPetal(p),
         x: ix + 0.7, y: iy + 0.045, z: iz + 0.6, w: 0.45, h: 0.45, flat: true, rot: 0.7 });
-      const [rx, ry, rz] = RAKA_B1;
+      const [rx, ry, rz] = RAKA_B1(f);
+      const sitB1 = f < 600;
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: "stand", expr: "nervous", blink: 0 }, {}, 0.72));
+        { mode: sitB1 ? "sit" : "stand", expr: "nervous", blink: 0 }, {}, 0.72));
       blob(out, rx, ry, rz, 0.72);
     } else if (f < 900) {
-      // B2 hal. 4: lorong malam — Raka mengendap bertelanjang kaki ke pintu terlarang
-      // yang tertutup; cahaya + kilau merembes dari bawah pintu.
+      // B2 hal. 4: lorong malam — Raka mengendap bertelanjang kaki menyeberangi lorong
+      // sampai ke pintu terlarang yang tertutup; cahaya + kilau merembes dari bawah pintu.
       const [rx, ry, rz] = RAKA_B2(f);
       const view = viewOf(cam, rx, rz, 0, -1);
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, view,
         { mode: "stand", expr: "nervous", blink: 0 },
-        { mode: "march", phase: (t * 0.9) % 1, expr: "nervous", stride: 0.55 }, 0.72));
+        { mode: "march", phase: (t * 1.6) % 1, expr: "nervous", stride: 0.8 }, 0.72));
       blob(out, rx, ry, rz, 0.72);
       // cahaya keemasan merembes dari bawah pintu + kilau debu cahaya
       glowFx(out, 60, 0.25, -83.7, t, 1.0, "doorGlowB2");
       glowFx(out, 60, 0.6, -83.5, t, 0.6, "doorGlowB2b");
     } else {
-      // B3 hal. 5: Ibu DARI BELAKANG di depan cermin beriak biru; tangan Raka di vas miring.
-      const [ix, iy, iz] = IBU_B3;
+      // B3 hal. 5: Ibu MELANGKAH pelan ke cermin beriak biru; tangan Raka TERULUR menyentuh vas yang mulai miring.
+      const [ix, iy, iz] = IBU_B3(f);
+      const stepB3 = f < 1020;
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: true, mirror: false },
-        { mode: "stand", expr: "neutral", blink: 0 }, { mode: "stand", expr: "neutral" }));
+        { mode: "stand", expr: "neutral", blink: 0 },
+        { mode: stepB3 ? "stroll" : "stand", phase: stepB3 ? (t * 0.4) % 1 : 0, expr: "neutral" }));
       blob(out, ix, iy, iz, 1, 0.9);
       glowFx(out, MIRROR[0], 1.9, MIRROR[2] + 0.3, t, 1.4, "mirrorB", "#9fd4ff");
       const [rx, ry, rz] = RAKA_B3;
       const rview = viewOf(cam, rx, rz, -1, 0);
+      const reach = smooth((f - 900) / 120);
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, rview,
         { mode: "stand", expr: "shock", blink: 0 },
-        { mode: "stand", expr: "shock" }, 0.72));
+        { mode: "push", pose: reach, hand: [430, 700], expr: "shock" }, 0.72));
       blob(out, rx, ry, rz, 0.72);
     }
   } else if (id === 3) {
     if (f < 1260) {
-      // C1 hal. 5 (lanjutan): vas miring di tangan Raka, mulai jatuh (pecah f 1230).
-      const [rx, ry, rz] = RAKA_C1;
+      // C1 hal. 5 (lanjutan): vas miring lalu JATUH (pecah f 1230) — Raka TERSENTAK mundur selangkah, Ibu melangkah mendekat.
+      const [rx, ry, rz] = RAKA_C1(f);
       const view = viewOf(cam, rx, rz, -1, 0);
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, view,
         { mode: "stand", expr: "shock", blink: 0 },
-        { mode: "stand", expr: "shock" }, 0.72));
+        { mode: "stroll", phase: (t * 1.2) % 1, expr: "shock", stride: 0.7 }, 0.72));
       blob(out, rx, ry, rz, 0.72);
-      // Ibu di ambang pintu di latar — menoleh kaget
-      const [ix, iy, iz] = IBU_C1;
+      // Ibu di ambang pintu di latar — melangkah mendekat, menoleh kaget
+      const [ix, iy, iz] = IBU_C1(f);
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: true, mirror: false },
-        { mode: "stand", expr: "shock", blink: 0 }, { mode: "stand", expr: "shock" }));
+        { mode: "stand", expr: "shock", blink: 0 },
+        { mode: "stroll", phase: (t * 0.6) % 1, expr: "shock" }));
       blob(out, ix, iy, iz, 1, 0.9);
     } else if (f < 1440) {
-      // C2 hal. 6: serpihan vas di lantai, Ibu menangis di gagang pintu, Raka lari ketakutan.
+      // C2 hal. 6: serpihan vas di lantai, Ibu menangis GEMETAR di gagang pintu, Raka lari ketakutan.
       const [ix, iy, iz] = IBU_C2;
-      out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
+      const jx = 0.012 * Math.sin(t * 15.1), jz = 0.01 * Math.sin(t * 17.3 + 1.2);
+      out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix + jx, iy, iz + jz, { side: false, mirror: false },
         { mode: "stand", expr: "sad", blink: 0 }, {}));
       blob(out, ix, iy, iz, 1, 0.9);
       out.fx.push({ key: "tear|ibu", cw: 200, ch: 120, draw: (p) => fxTear(p),
@@ -262,63 +285,64 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
         { mode: "march", phase: (t * 2.4) % 1, expr: "shock", stride: 1.1 }, 0.72));
       blob(out, rx, ry, rz, 0.72);
     } else {
-      // C3 hal. 6 close-up: wajah Ibu berkaca-kaca, tangan gemetar (jitter di posisi).
+      // C3 hal. 6 close-up: wajah Ibu berkaca-kaca, kepala MENUNDUK pelan, tangan gemetar (jitter di posisi).
       const [ix, iy, iz] = IBU_C3;
       const jx = 0.015 * Math.sin(t * 13.1), jz = 0.01 * Math.sin(t * 17.3 + 1.2);
+      const bow = smooth((f - 1440) / 120);
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix + jx, iy, iz + jz, { side: false, mirror: false },
-        { mode: "stand", expr: "sad", blink: 0 }, {}));
+        { mode: "stand", expr: "sad", blink: 0, tilt: 0.06 * bow, headTilt: 0.28 * bow }, {}));
       blob(out, ix, iy, iz, 1, 0.9);
       out.fx.push({ key: "tear|ibu", cw: 200, ch: 120, draw: (p) => fxTear(p),
         x: ix, y: iy + 1.44, z: iz + 0.42, w: 0.3, h: 0.18, soft: true });
     }
   } else if (id === 4) {
     if (f < 1890) {
-      // D1 hal. 7: beranda sore — Raka duduk di bangku memegang kunci kuningan + foto keluarga.
-      const [rx, ry, rz] = RAKA_D1;
+      // D1 hal. 7: beranda sore — Raka BERJALAN ke bangku lalu DUDUK memegang kunci kuningan + foto keluarga.
+      const [rx, ry, rz] = RAKA_D1(f);
+      const walkD1 = f < 1800;
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: "sit", expr: "sad", blink: 0 }, {}, 0.72));
+        { mode: walkD1 ? "march" : "sit", phase: walkD1 ? (t * 1.1) % 1 : 0, expr: "sad", blink: 0 }, {}, 0.72));
       blob(out, rx, ry, rz, 0.72);
-      // kunci kuningan di tangan Raka
+      // kunci kuningan di tangan Raka (mengikuti posisi)
       out.fx.push({ key: "key|brass", cw: 200, ch: 120, draw: (p) => fxKey(p, true),
         x: rx - 0.15, y: ry + 0.45, z: rz + 0.35, w: 0.34, h: 0.2 });
     } else {
-      // D2 hal. 8: ruang kenangan siang — Raka di pintu terbuka; potret Ayah + surat + jam pasir.
-      const [rx, ry, rz] = RAKA_D2;
+      // D2 hal. 8: ruang kenangan siang — Raka BERJALAN ke dinding sketsa Ayah.
+      const [rx, ry, rz] = RAKA_D2(f);
+      const walkD2 = f < 2070;
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: "stand", expr: "neutral", blink: 0 }, {}, 0.72));
+        { mode: walkD2 ? "march" : "stand", phase: walkD2 ? (t * 1.1) % 1 : 0, expr: "neutral", blink: 0 }, {}, 0.72));
       blob(out, rx, ry, rz, 0.72);
     }
   } else {
     if (f < 2430) {
-      // E1 hal. 9: malam — Ibu menangis memegang tangan Raka, Raka tersenyum menenangkan.
+      // E1 hal. 9: malam — Ibu + Raka BERJALAN pelan bergandengan tangan menuju cermin.
       // Cermin di belakang mereka polos (tidak beriak, tidak emas).
-      const [ix, iy, iz] = IBU_E1;
+      const [ix, iy, iz] = IBU_E1(f);
+      const walkE1 = f < 2370;
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
-        { mode: "stand", expr: "sad", blink: 0 }, {}));
+        { mode: walkE1 ? "stroll" : "stand", phase: walkE1 ? (t * 0.7) % 1 : 0, expr: "sad", blink: 0 }, {}));
       blob(out, ix, iy, iz, 1, 0.9);
       out.fx.push({ key: "tear|ibu", cw: 200, ch: 120, draw: (p) => fxTear(p),
         x: ix, y: iy + 1.44, z: iz + 0.42, w: 0.3, h: 0.18, soft: true });
-      const [rx, ry, rz] = RAKA_E1;
+      const [rx, ry, rz] = RAKA_E1(f);
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: "stand", expr: "smile", blink: 0 }, {}, 0.72));
+        { mode: walkE1 ? "stroll" : "stand", phase: walkE1 ? (t * 0.7) % 1 : 0, expr: "smile", blink: 0 }, {}, 0.72));
       blob(out, rx, ry, rz, 0.72);
 
     } else {
       // E2 hal. 10 (PENUTUP): Ibu + Raka DARI BELAKANG bergandengan tangan menatap
-      // Ayah yang tersenyum melambai di cermin EMAS.
-      const wave = 0.5 + 0.5 * Math.sin(t * 2.2);
+      // Ayah yang tersenyum melambai di cermin EMAS (lambai naik-turun nyata, ~1,75 dtk/siklus).
+      const wave = 0.5 + 0.5 * Math.sin(t * 3.6);
       out.fx.push({ key: `ayah|${q(wave, 8)}`, cw: 300, ch: 500, draw: (p) => ayahFigure(p, wave),
         x: MIRROR[0], y: 1.15, z: MIRROR[2] + 0.7, w: 1.5, h: 2.5, soft: false });
       glowFx(out, MIRROR[0], 1.9, MIRROR[2] + 0.4, t, 3.0, "mirrorGold");
       glowFx(out, MIRROR[0], 1.9, MIRROR[2] + 0.4, t, 1.6, "mirrorGold2");
       const [ix, iy, iz] = IBU_E2;
-      out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: true, mirror: false },
-        { mode: "stand", expr: "smile_closed", blink: 0 }, { mode: "stand", expr: "smile_closed" }));
+      out.places.push(backPlace(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, 1, [416, 535]));
       blob(out, ix, iy, iz, 1, 0.9);
       const [rx, ry, rz] = RAKA_E2;
-      out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: true, mirror: true },
-        { mode: "stand", expr: "smile", blink: 0 },
-        { mode: "stand", expr: "smile" }, 0.72));
+      out.places.push(backPlace(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, -1, [140, 366], 0.72));
       blob(out, rx, ry, rz, 0.72);
     }
   }

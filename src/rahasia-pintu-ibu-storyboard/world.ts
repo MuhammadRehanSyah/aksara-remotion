@@ -97,7 +97,7 @@ export class World {
   private windowGlass: THREE.MeshBasicMaterial; private windowGlassMem: THREE.MeshBasicMaterial;
   private frontDoor: THREE.Group; private backDoor: THREE.Group; private memDoor: THREE.Group;
   private doorGlowStrip: THREE.Mesh; private photoD1: THREE.Mesh;
-  private vase: THREE.Group; private shards: THREE.Group;
+  private vase: THREE.Group; private shards: THREE.Group; private teapot: THREE.Group;
 
   constructor(kit: Kit) {
     const R = this.root;
@@ -275,11 +275,14 @@ export class World {
       const leg = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.82, 0.08), teaTableM);
       leg.position.set(tt[0] + lx, 0.41, tt[2] + lz); R.add(leg);
     }
+    // teko teh (B1 hal. 3) — satu grup agar bisa dimiringkan saat Ibu menuang
+    this.teapot = new THREE.Group();
     const potM = new THREE.MeshLambertMaterial({ color: "#b8b0a0" });
     const teapot = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), potM);
-    teapot.position.set(tt[0] - 0.35, 0.95, tt[2]); teapot.scale.y = 0.85; R.add(teapot);
+    teapot.position.set(0, 0.09, 0); teapot.scale.y = 0.85; this.teapot.add(teapot);
     const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.035, 0.2, 8), potM);
-    spout.position.set(tt[0] - 0.2, 0.98, tt[2] + 0.05); spout.rotation.z = -0.9; R.add(spout);
+    spout.position.set(0.15, 0.12, 0.05); spout.rotation.z = -0.9; this.teapot.add(spout);
+    this.teapot.position.set(tt[0] - 0.35, 0.86, tt[2]); R.add(this.teapot);
     const cupM = new THREE.MeshLambertMaterial({ color: "#e8e4d8" });
     for (const [cx, cz] of [[-0.1, 0.15], [0.35, -0.1]] as const) {
       const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.09, 12), cupM);
@@ -318,10 +321,10 @@ export class World {
     canopy.position.set(63.8, 2.2, -69.2); canopy.scale.y = 0.8; R.add(canopy);
     const canopy2 = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 10), canopyM);
     canopy2.position.set(63.1, 1.9, -69.0); R.add(canopy2);
-    // foto keluarga di tangan Raka (D1) — hanya tampil di D1
+    // foto keluarga di tangan Raka (D1) — mengikuti posisi Raka saat ia berjalan ke bangku
     this.photoD1 = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.7),
       new THREE.MeshBasicMaterial({ map: familyPhotoTexture(), toneMapped: false }));
-    this.photoD1.position.set(RAKA_D1[0] + 0.3, 1.0, RAKA_D1[2] + 0.3);
+    this.photoD1.position.set(RAKA_D1(1620)[0] + 0.3, 1.0, RAKA_D1(1620)[2] + 0.3);
     this.photoD1.rotation.y = 0; this.photoD1.layers.set(NOINK); R.add(this.photoD1);
     // strip cahaya keemasan di bawah pintu terlarang (B2 hal. 4) — hanya tampil di B2
     this.doorGlowStrip = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.14),
@@ -496,17 +499,24 @@ export class World {
     this.frontDoor.rotation.y = -0.04;
     this.backDoor.rotation.y = (id === 2 && f >= 900) || id === 5 ? 1.9 : 0.05; // + = mengayun ke DALAM ceruk (jangan halangi kamera)
     this.memDoor.rotation.y = id === 4 ? 1.5 : -0.06;
-    // ---- vas: miring lalu jatuh (C1), serpihan muncul setelah pecah ----
-    const tip = id === 3 ? smooth((f - VASE_TIP_F) / 30) : 0;
+    // ---- vas: mulai miring di B3 (tangan Raka menyentuh) lalu jatuh di C1, serpihan muncul setelah pecah ----
+    const tip = id === 2 ? 0.15 * smooth((f - 1020) / 60) : id === 3 ? 0.15 + 0.85 * smooth((f - VASE_TIP_F) / 30) : 0;
     this.vase.visible = !(id === 3 && f >= VASE_BREAK_F);
-    if (id === 3) {
+    if (id === 2 || id === 3) {
       this.vase.rotation.z = tip * 1.35;
       this.vase.position.y = 0.82 - tip * 0.3;
       this.vase.position.x = VASE_TABLE[0] - tip * 0.25;
+    } else {
+      this.vase.rotation.z = 0;
+      this.vase.position.set(VASE_TABLE[0], 0.82, VASE_TABLE[2]);
     }
     this.shards.visible = id === 3 && f >= VASE_BREAK_F;
     this.doorGlowStrip.visible = id === 2 && f >= 720 && f < 900; // cahaya bawah pintu, B2 hal. 4
-    this.photoD1.visible = id === 4 && f < 1890; // foto keluarga di tangan Raka, D1 hal. 7
+    this.photoD1.visible = id === 4 && f >= 1800 && f < 1890; // foto keluarga di tangan Raka, D1 hal. 7 — baru muncul saat ia duduk (saat berjalan fotonya menutupi wajah)
+    if (this.photoD1.visible) { const r = RAKA_D1(f); this.photoD1.position.set(r[0] + 0.3, 1.0, r[2] + 0.3); }
+    // ---- teko menuang (B1 hal. 3): miring pelan saat Ibu menuang, kembali tegak setelahnya ----
+    const pour = id === 2 && f < 720 ? smooth((f - 560) / 30) * (1 - smooth((f - 680) / 40)) : 0;
+    this.teapot.rotation.z = -0.3 * pour;
     // ---- cast + efek ----
     const right = V(0, 0, 0).setFromMatrixColumn(cam.matrixWorld, 0);
     const st = stage(id, t, f, { pos: cam.position, right });
