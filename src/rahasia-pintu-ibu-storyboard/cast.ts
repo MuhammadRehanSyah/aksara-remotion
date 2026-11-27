@@ -136,16 +136,36 @@ const person = (cam: CamInfo, who: Who, x: number, y: number, z: number, view: {
   };
 };
 
-/** kartu punggung (dilihat dari belakang, tanpa wajah) — untuk E2 hal. 10.
- *  `inner`: arah lengan dalam (+1 = ke kanan kanvas, -1 = ke kiri); `hand`: titik tangan dalam (kanvas). */
-const backPlace = (cam: CamInfo, who: Who, x: number, y: number, z: number, inner: -1 | 1, hand: [number, number], scale = 1): Place => {
+/** kartu punggung (dilihat dari belakang, tanpa wajah) — untuk E2 hal. 10 dan untuk
+ *  tokoh yang berjalan MENJAUHI kamera (A2, B2, B3, D2, E1). `walk` mengaktifkan
+ *  siklus langkah (bob + kaki melangkah + ayun lengan) selama berjalan; kunci tekstur
+ *  menyertakan fase langkah agar gambar digambar ulang tiap langkah. */
+const backPlace = (cam: CamInfo, who: Who, x: number, y: number, z: number, inner: -1 | 0 | 1, hand?: [number, number], scale = 1, walk?: { mode: "march" | "stroll"; phase: number }): Place => {
   const d = cam.pos.distanceTo(tmp.set(x, y + 1.2, z)) / scale;
   const [w, h, k] = tier(d);
+  const ph = walk ? Math.round((((walk.phase % 1) + 1) % 1) * 24) : 0;
   return {
-    key: `B|${who.okey}|${inner}`, x, y, z, scale,
-    draw: (p) => bodyBack(p, who.o, { inner, hand, seed: 3 }),
+    key: `B|${who.okey}|${inner}|${walk ? walk.mode : "stand"}|${ph}`, x, y, z, scale,
+    draw: (p) => bodyBack(p, who.o, { inner, hand, seed: 3, phase: walk?.phase ?? 0, mode: walk?.mode ?? "stand" }),
     size: [w, h, k],
   };
+};
+
+/** Putaran di akhir jalan (18 frame): punggung -> samping -> depan. `mirror` = arah profil
+ *  di tengah putaran (true = menghadap kiri layar). Dipakai A2 + E1: tokoh tiba di pose
+ *  akhir lalu berputar menghadap kamera (sesuai hal. 2 dan hal. 9 storyboard). */
+const turnPlace = (out: Stage, cam: CamInfo, who: Who, x: number, y: number, z: number,
+  f: number, f0: number, mirror: boolean, fo: FrontOpts, scale = 1, dur = 18) => {
+  const u = clamp01((f - f0) / dur);
+  if (u < 1 / 3) {
+    out.places.push(backPlace(cam, who, x, y, z, 0, undefined, scale));
+  } else if (u < 2 / 3) {
+    out.places.push(person(cam, who, x, y, z, { side: true, mirror },
+      { ...fo, mode: "stand" }, { mode: "stand", expr: fo.expr ?? "neutral" }, scale));
+  } else {
+    out.places.push(person(cam, who, x, y, z, { side: false, mirror: false },
+      { ...fo, mode: "stand" }, { mode: "stand", expr: fo.expr ?? "neutral" }, scale));
+  }
 };
 
 /** bayangan kontak tanah */
@@ -183,15 +203,30 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
       blob(out, rx, ry, rz, 0.72);
     } else {
       // A2 hal. 2: Ibu BERJALAN ke pintu Raka memegang kunci tua BERCAHAYA; Raka melangkah keluar di sampingnya.
+      // Jalan MENJAUHI kamera -> kartu punggung; tiba di pintu lalu BERPUTAR menghadap kamera (hal. 2).
       const [ix, iy, iz] = IBU_A2(f);
-      const walkA2 = f < 480;
-      out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
-        { mode: walkA2 ? "march" : "stand", phase: walkA2 ? (t * 0.9) % 1 : 0, expr: "stern", blink: 0 }, {}));
+      if (f < 480) {
+        out.places.push(backPlace(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, 0, undefined, 1,
+          { mode: "march", phase: (t * 0.9) % 1 }));
+      } else if (f < 498) {
+        turnPlace(out, cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, f, 480, true,
+          { mode: "stand", expr: "stern", blink: 0 });
+      } else {
+        out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
+          { mode: "stand", expr: "stern", blink: 0 }, {}));
+      }
       blob(out, ix, iy, iz, 1, 0.9);
       const [rx, ry, rz] = RAKA_A2(f);
-      const stepA2 = f < 480;
-      out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: stepA2 ? "stroll" : "stand", phase: stepA2 ? (t * 0.6) % 1 : 0, expr: "nervous", blink: 0 }, {}, 0.72));
+      if (f < 480) {
+        out.places.push(backPlace(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, 0, undefined, 0.72,
+          { mode: "stroll", phase: (t * 0.6) % 1 }));
+      } else if (f < 498) {
+        turnPlace(out, cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, f, 480, false,
+          { mode: "stand", expr: "nervous", blink: 0 }, 0.72);
+      } else {
+        out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
+          { mode: "stand", expr: "nervous", blink: 0 }, {}, 0.72));
+      }
       blob(out, rx, ry, rz, 0.72);
       // kunci tua bercahaya di tangan Ibu (sisi kiri, ke arah pintu) + kilau kuat
       out.fx.push({ key: "key|old", cw: 200, ch: 120, draw: (p) => fxKey(p, false),
@@ -225,22 +260,21 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
     } else if (f < 900) {
       // B2 hal. 4: lorong malam — Raka mengendap bertelanjang kaki menyeberangi lorong
       // sampai ke pintu terlarang yang tertutup; cahaya + kilau merembes dari bawah pintu.
+      // Mengendap MENJAUHI kamera -> kartu punggung selama shot (tanpa putaran: berakhir menghadap pintu).
       const [rx, ry, rz] = RAKA_B2(f);
-      const view = viewOf(cam, rx, rz, 0, -1);
-      out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, view,
-        { mode: "stand", expr: "nervous", blink: 0 },
-        { mode: "march", phase: (t * 1.6) % 1, expr: "nervous", stride: 0.8 }, 0.72));
+      out.places.push(backPlace(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, 0, undefined, 0.72,
+        { mode: "march", phase: (t * 1.6) % 1 }));
       blob(out, rx, ry, rz, 0.72);
       // cahaya keemasan merembes dari bawah pintu + kilau debu cahaya
       glowFx(out, 60, 0.25, -83.7, t, 1.0, "doorGlowB2");
       glowFx(out, 60, 0.6, -83.5, t, 0.6, "doorGlowB2b");
     } else {
       // B3 hal. 5: Ibu MELANGKAH pelan ke cermin beriak biru; tangan Raka TERULUR menyentuh vas yang mulai miring.
+      // Melangkah ke cermin MENJAUHI kamera -> kartu punggung (tanpa putaran: berakhir menghadap cermin).
       const [ix, iy, iz] = IBU_B3(f);
       const stepB3 = f < 1020;
-      out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: true, mirror: false },
-        { mode: "stand", expr: "neutral", blink: 0 },
-        { mode: stepB3 ? "stroll" : "stand", phase: stepB3 ? (t * 0.4) % 1 : 0, expr: "neutral" }));
+      out.places.push(backPlace(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, 0, undefined, 1,
+        stepB3 ? { mode: "stroll", phase: (t * 0.4) % 1 } : undefined));
       blob(out, ix, iy, iz, 1, 0.9);
       glowFx(out, MIRROR[0], 1.9, MIRROR[2] + 0.3, t, 1.4, "mirrorB", "#9fd4ff");
       const [rx, ry, rz] = RAKA_B3;
@@ -308,26 +342,46 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
         x: rx - 0.15, y: ry + 0.45, z: rz + 0.35, w: 0.34, h: 0.2 });
     } else {
       // D2 hal. 8: ruang kenangan siang — Raka BERJALAN ke dinding sketsa Ayah.
+      // Berjalan ke dinding MENJAUHI kamera -> kartu punggung (tanpa putaran: berakhir menghadap sketsa).
       const [rx, ry, rz] = RAKA_D2(f);
       const walkD2 = f < 2070;
-      out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: walkD2 ? "march" : "stand", phase: walkD2 ? (t * 1.1) % 1 : 0, expr: "neutral", blink: 0 }, {}, 0.72));
+      out.places.push(backPlace(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, 0, undefined, 0.72,
+        walkD2 ? { mode: "march", phase: (t * 1.1) % 1 } : undefined));
       blob(out, rx, ry, rz, 0.72);
     }
   } else {
     if (f < 2430) {
       // E1 hal. 9: malam — Ibu + Raka BERJALAN pelan bergandengan tangan menuju cermin.
-      // Cermin di belakang mereka polos (tidak beriak, tidak emas).
+      // Berjalan MENJAUHI kamera -> kartu punggung; tiba lalu BERPUTAR menghadap kamera (hal. 9).
       const [ix, iy, iz] = IBU_E1(f);
-      const walkE1 = f < 2370;
-      out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
-        { mode: walkE1 ? "stroll" : "stand", phase: walkE1 ? (t * 0.7) % 1 : 0, expr: "sad", blink: 0 }, {}));
+      if (f < 2370) {
+        out.places.push(backPlace(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, 0, undefined, 1,
+          { mode: "stroll", phase: (t * 0.7) % 1 }));
+      } else if (f < 2388) {
+        turnPlace(out, cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, f, 2370, false,
+          { mode: "stand", expr: "sad", blink: 0 });
+      } else {
+        out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: false, mirror: false },
+          { mode: "stand", expr: "sad", blink: 0 }, {}));
+      }
       blob(out, ix, iy, iz, 1, 0.9);
-      out.fx.push({ key: "tear|ibu", cw: 200, ch: 120, draw: (p) => fxTear(p),
-        x: ix, y: iy + 1.44, z: iz + 0.42, w: 0.3, h: 0.18, soft: true });
+      // air mata hanya muncul setelah putaran (f >= 2370): selama berjalan membelakangi
+      // kamera, air mata di depan wajah akan terlihat menempel di belakang kerudung.
+      if (f >= 2370) {
+        out.fx.push({ key: "tear|ibu", cw: 200, ch: 120, draw: (p) => fxTear(p),
+          x: ix, y: iy + 1.44, z: iz + 0.42, w: 0.3, h: 0.18, soft: true });
+      }
       const [rx, ry, rz] = RAKA_E1(f);
-      out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
-        { mode: walkE1 ? "stroll" : "stand", phase: walkE1 ? (t * 0.7) % 1 : 0, expr: "smile", blink: 0 }, {}, 0.72));
+      if (f < 2370) {
+        out.places.push(backPlace(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, 0, undefined, 0.72,
+          { mode: "stroll", phase: (t * 0.7) % 1 }));
+      } else if (f < 2388) {
+        turnPlace(out, cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, f, 2370, true,
+          { mode: "stand", expr: "smile", blink: 0 }, 0.72);
+      } else {
+        out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, { side: false, mirror: false },
+          { mode: "stand", expr: "smile", blink: 0 }, {}, 0.72));
+      }
       blob(out, rx, ry, rz, 0.72);
 
     } else {

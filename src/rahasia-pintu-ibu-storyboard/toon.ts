@@ -763,16 +763,21 @@ export const bodySide = (p: Pen, o: Outfit, opts: SideOpts) => {
   p.rot = null;
 };
 
-export type BackOpts = { inner?: -1 | 0 | 1; hand?: [number, number]; seed?: number; light?: number };
+export type BackOpts = { inner?: -1 | 0 | 1; hand?: [number, number]; seed?: number; light?: number;
+  /** siklus langkah (dipakai saat tokoh berjalan menjauhi kamera): bob + kaki melangkah + ayun lengan */
+  phase?: number; mode?: "march" | "stroll" | "stand" };
 /** punggung tokoh (dilihat dari belakang, tanpa wajah): kerudung untuk Ibu, topi dari belakang untuk Raka.
  *  `inner`: sisi lengan dalam (+1 = kanan kanvas, -1 = kiri); `hand`: titik tangan dalam (kanvas) —
  *  dipakai agar dua tangan yang bergandengan bertemu di satu titik dunia yang sama. */
 export const bodyBack = (p: Pen, o: Outfit, opts: BackOpts = {}) => {
-  const { inner = 0, hand, seed = 1, light = DEF_LIGHT } = opts;
+  const { inner = 0, hand, seed = 1, light = DEF_LIGHT, phase = 0, mode = "stand" } = opts;
   const Bd = BUILD[o.build ?? "adult"], skin = o.skin ?? SKIN;
   const H = headBlob(seed, Bd.a, 0), W = 2 * H.a, HH = 2 * H.b, u = W / 100;
-  const sole = 975;
-  const torsoBot = sole - Bd.legs * HH;
+  const sole = 975, two = Math.PI * 2;
+  // langkah: bob badan 5% (march) / 3% (stroll), terendah saat kaki menapak (seperti bodyFront)
+  const tall = (1 + Bd.torso + Bd.legs) * HH;
+  const bob = mode === "march" ? 0.025 * tall * Math.cos(2 * two * phase) : mode === "stroll" ? 0.015 * tall * Math.cos(2 * two * phase) : 0;
+  const torsoBot = sole - Bd.legs * HH + bob;
   const chin = torsoBot - Bd.torso * HH, hc = chin - H.b, hipY = torsoBot - 0.12 * HH;
   const thick = thickAngle(light), ow = 5 * u;
   const legCol = mix(o.pants, INK, 0.55), armCol = mix(o.jacket, INK, 0.5), footCol = o.boots;
@@ -785,9 +790,13 @@ export const bodyBack = (p: Pen, o: Outfit, opts: BackOpts = {}) => {
       p.stroke([[fx, sole - 0.4 * HH], [fx + side * u, fy]], legW, legCol);
     }
   } else {
-    for (const side of [-1, 1]) {
-      const hx = 300 + side * 15 * u, fx = 300 + side * 22 * u, fy = sole - 4 * u;
-      p.stroke([[hx, hipY], [(hx + fx) / 2, (hipY + fy) / 2], [fx, fy]], legW, legCol);
+    // kaki melangkah bergantian (dilihat dari belakang): satu kaki terangkat saat fasenya naik
+    const L = mode === "march" ? 75 : mode === "stroll" ? 33 : 0;
+    for (const [side, ph] of [[-1, 0], [1, 0.5]] as const) {
+      const up = Math.max(0, Math.sin(two * (phase + ph))) * L;
+      const hx = 300 + side * 15 * u, fx = 300 + side * 22 * u, fy = sole - 4 * u - up;
+      const k: P2 = [(hx + fx) / 2 + side * (1.5 * u + up * 0.16), (hipY + fy) / 2 - up * 0.08];
+      p.stroke(curve([hx, hipY], k, [fx, fy]), legW, legCol);
       footStroke(p, [fx - side * 3 * u, fy], [fx + side * 13 * u, fy + 0.5 * u], footW, footCol);
     }
   }
@@ -808,6 +817,8 @@ export const bodyBack = (p: Pen, o: Outfit, opts: BackOpts = {}) => {
     p.inkRing(tp, ow, thick);
   }
   // ---- lengan: luar menggantung, dalam terulur ke tangan yang digenggam ----
+  // ayun lengan saat berjalan (berlawanan dengan kaki sesisi)
+  const sw = (mode === "march" || mode === "stroll") ? Math.sin(two * phase) : 0;
   const sh = (side: number): P2 => [tcx + side * 0.85 * T.a, chin + 0.12 * HH];
   const arm = (side: number) => {
     const S = sh(side);
@@ -816,7 +827,7 @@ export const bodyBack = (p: Pen, o: Outfit, opts: BackOpts = {}) => {
       p.stroke(curve(S, [(S[0] + hx) / 2, (S[1] + hy) / 2 + 8 * u], [hx, hy]), 5.2 * u, armCol);
       p.dot(hx, hy, 5.5 * u, skin);
     } else {
-      const ex = tcx + side * (1.12 * T.a + 4 * u), hx2 = ex + side * 3 * u;
+      const ex = tcx + side * (1.12 * T.a + 4 * u), hx2 = ex + side * 3 * u + side * 4 * u * sw;
       p.stroke(curve(S, [ex, S[1] + 0.48 * HH], [hx2, chin + 1.04 * HH]), 5.2 * u, armCol);
       p.dot(hx2, chin + 1.04 * HH, 5.5 * u, skin);
     }
