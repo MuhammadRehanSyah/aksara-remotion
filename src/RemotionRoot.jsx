@@ -33,6 +33,7 @@ import { Trial3DPart2 } from "./trial3d-part2/TrialBridge2";
 import { IbuMisterius } from "./ibu-misterius/IbuBridge";
 import { RahasiaPintuIbu } from "./rahasia-pintu-ibu/RahasiaPintuIbu";
 import { RahasiaPintuIbuKomik } from "./rahasia-pintu-ibu-komik/RahasiaPintuIbuKomik";
+import { RahasiaPintuIbuStoryboard } from "./rahasia-pintu-ibu-storyboard/RahasiaPintuIbuStoryboard";
 
 export const RemotionRoot = () => {
 	return (
@@ -232,6 +233,14 @@ export const RemotionRoot = () => {
 			<Composition
 				id="RahasiaPintuIbu"
 				component={RahasiaPintuIbu}
+				durationInFrames={2700}
+				fps={30}
+				width={1080}
+				height={1920}
+			/>
+			<Composition
+				id="RahasiaPintuIbuStoryboard"
+				component={RahasiaPintuIbuStoryboard}
 				durationInFrames={2700}
 				fps={30}
 				width={1080}
