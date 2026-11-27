@@ -11,8 +11,9 @@
 //   hal. 2 -> A2 (f 270-540)  Ibu + kunci bercahaya di pintu Raka, jam 23.55, hujan, Raka berkeringat
 //   hal. 3 -> B1 (f 540-720)  pagi, Ibu menuang teh, Raka cemas di bangku, kamboja, tanah merah
 //   hal. 4 -> B2 (f 720-900)  lorong malam, Raka mengendap ke pintu terlarang, cahaya bawah pintu
-//   hal. 5 -> B3 (f 900-1080) Ibu dari belakang di depan cermin beriak, tangan Raka di vas miring
-//   hal. 5 -> C1 (f 1080-1260) vas miring di tangan Raka, JATUH/PECAH di f 1230 (SFX PRANG)
+//   hal. 5 -> B3 (f 900-1080) Ibu dari belakang di depan cermin beriak, tangan Raka di vas miring,
+//          vas JATUH/PECAH f 1023 (SFX PRANG pas kata "PRANG!" 34,1 dtk), Raka tersentak mundur
+//   hal. 5 -> C1 (f 1080-1260) vas SUDAH PECAH — serpihan di lantai, wajah kaget Ibu/Raka
 //   hal. 6 -> C2 (f 1260-1440) serpihan vas, Ibu menangis di gagang pintu, Raka lari
 //   hal. 6 -> C3 (f 1440-1620) close-up wajah Ibu berkaca-kaca
 //   hal. 7 -> D1 (f 1620-1890) beranda sore, Raka di bangku + kunci + foto keluarga, melati
@@ -47,13 +48,15 @@ export const RAKA_B1 = (f: number): V3 => (f < 600 ? [58.5, 0, -80.3] : [58.5 + 
 // B2 hal. 4: Raka mengendap dari tengah lorong ke pintu terlarang yang tertutup
 // (mulai z=-79.0 agar langsung terlihat — mulai di kamera z=-76.9 membuatnya tak terlihat ~1,5 dtk)
 export const RAKA_B2 = (f: number): V3 => [60, 0, -79.0 - 0.0261 * (f - 720)];
-// B3 hal. 5: Ibu melangkah pelan ke cermin beriak; meja vas di dekat ambang pintu; Raka menyentuh vas yang sudah miring
+// B3 hal. 5: Ibu melangkah pelan ke cermin beriak; meja vas di dekat ambang pintu; Raka menyentuh vas yang sudah miring.
+// Vas pecah f 1023 (akhir B3) — Raka TERSENTAK mundur selangkah (f 1023-1053), lalu berdiri kaget di tempat.
 export const IBU_B3 = (f: number): V3 => { const u = smooth((f - 900) / 120); return [60, 0, -84.0 - 0.6 * u]; };
 export const VASE_TABLE: V3 = [58.7, 0, -83.4];
-export const RAKA_B3: V3 = [59.3, 0, -82.6];
-// C1 hal. 5 (lanjutan): Raka di meja vas saat vas jatuh — tersentak mundur selangkah
-export const RAKA_C1 = (f: number): V3 => { const u = smooth((f - 1230) / 30); return [59.3 + 0.4 * u, 0, -82.6 + 0.6 * u]; };
-export const IBU_C1 = (f: number): V3 => { const u = smooth((f - 1200) / 60); return [59.8 - 0.3 * u, 0, -83.3 + 0.4 * u]; };
+export const RAKA_B3 = (f: number): V3 => { const u = smooth((f - 1023) / 30); return [59.3 + 0.4 * u, 0, -82.6 + 0.6 * u]; };
+// C1 hal. 5 (lanjutan): vas SUDAH pecah — Raka + Ibu berdiri kaget di tempat (tersentak sudah selesai di B3,
+// u = 1 sepanjang C1, jadi posisi di sini KONSTAN di titik akhir tersentak).
+export const RAKA_C1 = (f: number): V3 => { const u = smooth((f - 1023) / 30); return [59.3 + 0.4 * u, 0, -82.6 + 0.6 * u]; };
+export const IBU_C1 = (f: number): V3 => { const u = smooth((f - 1023) / 60); return [59.8 - 0.3 * u, 0, -83.3 + 0.4 * u]; };
 // C2 hal. 6: Ibu menangis di gagang pintu terlarang; Raka lari ketakutan ke kanan
 export const IBU_C2: V3 = [59.5, 0, -83.6];
 export const RAKA_C2 = (f: number): V3 => [60.3 + 0.0167 * (f - 1260), 0, -81.5 + 0.002 * (f - 1260)];
@@ -77,9 +80,11 @@ export const RAKA_E1 = (f: number): V3 => { const u = smooth((f - 2160) / 210); 
 export const IBU_E2: V3 = [59.85, 0, -82.9];
 export const RAKA_E2: V3 = [60.35, 0, -82.9];
 
-// vas jatuh di C1: mulai miring f 1200, jatuh f 1200-1230, pecah (serpihan muncul) f >= 1230
-export const VASE_TIP_F = 1200;
-export const VASE_BREAK_F = 1230;
+// vas jatuh di akhir B3: mulai miring f 1000, jatuh f 1000-1023, pecah (serpihan muncul) f >= 1023.
+// f 1023 = 34,1 dtk — tepat kata "PRANG!" di narasi (v4, 27 Nov 2026). Dulu f 1200/1230 = 41,0 dtk,
+// tertinggal ~7 dtk dari kata narasi.
+export const VASE_TIP_F = 1000;
+export const VASE_BREAK_F = 1023;
 // cermin terbuka (emas): f 2430-2700 (E2, hal. 10); beriak biru di B3/C (f 900-1620)
 export const mirrorOpen = (f: number) => (f >= 2430 ? smooth((f - 2430) / 90) : 0);
 export const mirrorRipple = (f: number) => (f >= 900 && f < 1620 ? 0.6 : f >= 2430 ? 1 : 0);

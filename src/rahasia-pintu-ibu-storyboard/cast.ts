@@ -270,6 +270,7 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
       glowFx(out, 60, 0.6, -83.5, t, 0.6, "doorGlowB2b");
     } else {
       // B3 hal. 5: Ibu MELANGKAH pelan ke cermin beriak biru; tangan Raka TERULUR menyentuh vas yang mulai miring.
+      // Vas JATUH/PECAH f 1023 (PRANG) — Raka menarik tangan dan TERSENTAK mundur (f 1023-1053), lalu berdiri kaget.
       // Melangkah ke cermin MENJAUHI kamera -> kartu punggung (tanpa putaran: berakhir menghadap cermin).
       const [ix, iy, iz] = IBU_B3(f);
       const stepB3 = f < 1020;
@@ -277,28 +278,31 @@ export const stage = (id: number, t: number, f: number, cam: CamInfo): Stage => 
         stepB3 ? { mode: "stroll", phase: (t * 0.4) % 1 } : undefined));
       blob(out, ix, iy, iz, 1, 0.9);
       glowFx(out, MIRROR[0], 1.9, MIRROR[2] + 0.3, t, 1.4, "mirrorB", "#9fd4ff");
-      const [rx, ry, rz] = RAKA_B3;
+      const [rx, ry, rz] = RAKA_B3(f);
       const rview = viewOf(cam, rx, rz, -1, 0);
-      const reach = smooth((f - 900) / 120);
+      const rec = smooth((f - 1023) / 30); // 0 sebelum pecah, 0 -> 1 selama tersentak, 1 sesudahnya
+      const reach = smooth((f - 900) / 120) * (1 - rec); // tangan terulur sampai pecah, lalu ditarik
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, rview,
         { mode: "stand", expr: "shock", blink: 0 },
-        { mode: "push", pose: reach, hand: [430, 700], expr: "shock" }, 0.72));
+        rec <= 0 ? { mode: "push", pose: reach, hand: [430, 700], expr: "shock" }
+          : rec < 1 ? { mode: "march", phase: (t * 1.2) % 1, expr: "shock", stride: 0.7 }
+          : { mode: "stand", expr: "shock" }, 0.72));
       blob(out, rx, ry, rz, 0.72);
     }
   } else if (id === 3) {
     if (f < 1260) {
-      // C1 hal. 5 (lanjutan): vas miring lalu JATUH (pecah f 1230) — Raka TERSENTAK mundur selangkah, Ibu melangkah mendekat.
+      // C1 hal. 5 (lanjutan): vas SUDAH PECAH (f 1023, akhir B3) — serpihan di lantai, Raka + Ibu kaget di tempat.
       const [rx, ry, rz] = RAKA_C1(f);
       const view = viewOf(cam, rx, rz, -1, 0);
       out.places.push(person(cam, { i: 2, o: RAKA, okey: "raka" }, rx, ry, rz, view,
         { mode: "stand", expr: "shock", blink: 0 },
-        { mode: "stroll", phase: (t * 1.2) % 1, expr: "shock", stride: 0.7 }, 0.72));
+        { mode: "stand", expr: "shock" }, 0.72));
       blob(out, rx, ry, rz, 0.72);
       // Ibu di ambang pintu di latar — melangkah mendekat, menoleh kaget
       const [ix, iy, iz] = IBU_C1(f);
       out.places.push(person(cam, { i: 1, o: IBU, okey: "ibu" }, ix, iy, iz, { side: true, mirror: false },
         { mode: "stand", expr: "shock", blink: 0 },
-        { mode: "stroll", phase: (t * 0.6) % 1, expr: "shock" }));
+        { mode: "stand", expr: "shock" }));
       blob(out, ix, iy, iz, 1, 0.9);
     } else if (f < 1440) {
       // C2 hal. 6: serpihan vas di lantai, Ibu menangis GEMETAR di gagang pintu, Raka lari ketakutan.

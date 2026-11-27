@@ -132,8 +132,8 @@ export const RahasiaPintuIbuStoryboard: React.FC = () => {
 			>
 				<Inner kit={kit} />
 			</ThreeCanvas>
-			{/* Audio campuran 90 dtk (VO + musik + SFX), public/rahasia-pintu-ibu/audio/mix.wav. */}
-			<Audio src={staticFile("rahasia-pintu-ibu/audio/mix.wav")} />
+			{/* Audio campuran 90 dtk (VO + musik + SFX), v4: SFX PRANG dipindah ke 34,1 dtk (pecah f1023). */}
+			<Audio src={staticFile("rahasia-pintu-ibu/audio/mix-v4.wav")} />
 		</AbsoluteFill>
 	);
 };

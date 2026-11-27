@@ -499,18 +499,19 @@ export class World {
     this.frontDoor.rotation.y = -0.04;
     this.backDoor.rotation.y = (id === 2 && f >= 900) || id === 5 ? 1.9 : 0.05; // + = mengayun ke DALAM ceruk (jangan halangi kamera)
     this.memDoor.rotation.y = id === 4 ? 1.5 : -0.06;
-    // ---- vas: mulai miring di B3 (tangan Raka menyentuh) lalu jatuh di C1, serpihan muncul setelah pecah ----
-    const tip = id === 2 ? 0.15 * smooth((f - 1020) / 60) : id === 3 ? 0.15 + 0.85 * smooth((f - VASE_TIP_F) / 30) : 0;
-    this.vase.visible = !(id === 3 && f >= VASE_BREAK_F);
-    if (id === 2 || id === 3) {
-      this.vase.rotation.z = tip * 1.35;
-      this.vase.position.y = 0.82 - tip * 0.3;
-      this.vase.position.x = VASE_TABLE[0] - tip * 0.25;
+    // ---- vas: jatuh di akhir B3 (miring f 1000-1023, pecah f 1023 pas kata "PRANG!"), serpihan muncul setelah pecah ----
+    // fallU 0 -> 1 selama jatuh; vas hilang + serpihan muncul begitu pecah, di semua shot sesudahnya (bukan cuma C1).
+    const fallU = f < VASE_TIP_F ? 0 : f < VASE_BREAK_F ? smooth((f - VASE_TIP_F) / (VASE_BREAK_F - VASE_TIP_F)) : 1;
+    this.vase.visible = f < VASE_BREAK_F;
+    if (fallU > 0) {
+      this.vase.rotation.z = fallU * 1.35;
+      this.vase.position.y = 0.82 - fallU * 0.3;
+      this.vase.position.x = VASE_TABLE[0] - fallU * 0.25;
     } else {
       this.vase.rotation.z = 0;
       this.vase.position.set(VASE_TABLE[0], 0.82, VASE_TABLE[2]);
     }
-    this.shards.visible = id === 3 && f >= VASE_BREAK_F;
+    this.shards.visible = f >= VASE_BREAK_F;
     this.doorGlowStrip.visible = id === 2 && f >= 720 && f < 900; // cahaya bawah pintu, B2 hal. 4
     this.photoD1.visible = id === 4 && f >= 1800 && f < 1890; // foto keluarga di tangan Raka, D1 hal. 7 — baru muncul saat ia duduk (saat berjalan fotonya menutupi wajah)
     if (this.photoD1.visible) { const r = RAKA_D1(f); this.photoD1.position.set(r[0] + 0.3, 1.0, r[2] + 0.3); }
