@@ -31,6 +31,7 @@ import { FPS as FEED_FPS, HEIGHT as FEED_H, TOTAL_FRAMES as FEED_FRAMES, WIDTH a
 import { Trial3D } from "./trial3d/TrialBridge";
 import { Trial3DPart2 } from "./trial3d-part2/TrialBridge2";
 import { IbuMisterius } from "./ibu-misterius/IbuBridge";
+import { RahasiaPintuIbu } from "./rahasia-pintu-ibu/RahasiaPintuIbu";
 
 export const RemotionRoot = () => {
 	return (
@@ -222,6 +223,14 @@ export const RemotionRoot = () => {
 			<Composition
 				id="IbuMisterius"
 				component={IbuMisterius}
+				durationInFrames={2700}
+				fps={30}
+				width={1080}
+				height={1920}
+			/>
+			<Composition
+				id="RahasiaPintuIbu"
+				component={RahasiaPintuIbu}
 				durationInFrames={2700}
 				fps={30}
 				width={1080}
