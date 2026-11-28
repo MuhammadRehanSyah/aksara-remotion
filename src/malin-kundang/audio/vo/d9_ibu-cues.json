@@ -1,0 +1,136 @@
+{
+  "fps": 24,
+  "start": 70.352,
+  "cues": [
+    {
+      "frame": 1688,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 1690,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1692,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1701,
+      "mouth": "E",
+      "label": "bulat (O)"
+    },
+    {
+      "frame": 1704,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1738,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1741,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1746,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1748,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1755,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1759,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1765,
+      "mouth": "H",
+      "label": "lidah naik (L)"
+    },
+    {
+      "frame": 1769,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1773,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1792,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1797,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1799,
+      "mouth": "D",
+      "label": "terbuka lebar (AA)"
+    },
+    {
+      "frame": 1804,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1807,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1809,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1816,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1818,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1823,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1826,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1828,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1831,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    }
+  ]
+}

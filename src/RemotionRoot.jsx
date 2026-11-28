@@ -35,6 +35,7 @@ import { RahasiaPintuIbu } from "./rahasia-pintu-ibu/RahasiaPintuIbu";
 import { RahasiaPintuIbuKomik } from "./rahasia-pintu-ibu-komik/RahasiaPintuIbuKomik";
 import { RahasiaPintuIbuStoryboard } from "./rahasia-pintu-ibu-storyboard/RahasiaPintuIbuStoryboard";
 import { KacaurusTrial, KACAUSTRRIAL_FRAMES } from "./kacaurus-trial/KacaurusTrial";
+import { MalinKundang, MALINKUNDANG_FRAMES } from "./malin-kundang/MalinKundang";
 
 export const RemotionRoot = () => {
 	return (
@@ -259,6 +260,14 @@ export const RemotionRoot = () => {
 				id="KacaurusTrial"
 				component={KacaurusTrial}
 				durationInFrames={KACAUSTRRIAL_FRAMES}
+				fps={24}
+				width={1080}
+				height={1920}
+			/>
+			<Composition
+				id="MalinKundang"
+				component={MalinKundang}
+				durationInFrames={MALINKUNDANG_FRAMES}
 				fps={24}
 				width={1080}
 				height={1920}

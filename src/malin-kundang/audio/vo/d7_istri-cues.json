@@ -1,0 +1,121 @@
+{
+  "fps": 24,
+  "start": 59.478,
+  "cues": [
+    {
+      "frame": 1427,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 1431,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1443,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 1449,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1458,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1460,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1463,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1465,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    },
+    {
+      "frame": 1467,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1469,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    },
+    {
+      "frame": 1472,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1480,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1483,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 1493,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1497,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1499,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1503,
+      "mouth": "E",
+      "label": "bulat (O)"
+    },
+    {
+      "frame": 1505,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    },
+    {
+      "frame": 1509,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1512,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1517,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1524,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1526,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    }
+  ]
+}

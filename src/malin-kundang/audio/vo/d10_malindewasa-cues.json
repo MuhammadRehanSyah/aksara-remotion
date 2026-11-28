@@ -1,0 +1,36 @@
+{
+  "fps": 24,
+  "start": 85.106,
+  "cues": [
+    {
+      "frame": 2045,
+      "mouth": "D",
+      "label": "terbuka lebar (AA)"
+    },
+    {
+      "frame": 2070,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 2073,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 2075,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 2078,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 2090,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    }
+  ]
+}

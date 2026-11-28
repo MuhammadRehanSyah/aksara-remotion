@@ -1,0 +1,91 @@
+{
+  "fps": 24,
+  "start": 54.856,
+  "cues": [
+    {
+      "frame": 1318,
+      "mouth": "D",
+      "label": "terbuka lebar (AA)"
+    },
+    {
+      "frame": 1321,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1331,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1341,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1343,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 1346,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1348,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    },
+    {
+      "frame": 1356,
+      "mouth": "G",
+      "label": "gigi + bibir bawah (F/V)"
+    },
+    {
+      "frame": 1358,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 1365,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1371,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1374,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1398,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    },
+    {
+      "frame": 1400,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 1402,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 1406,
+      "mouth": "E",
+      "label": "bulat (O)"
+    },
+    {
+      "frame": 1412,
+      "mouth": "F",
+      "label": "bulat kecil (U)"
+    }
+  ]
+}
