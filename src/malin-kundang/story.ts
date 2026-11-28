@@ -16,7 +16,7 @@ export const easeOut = (u: number) => 1 - (1 - clamp01(u)) ** 4;
 export const HUT_POS: V3 = [-3.5, 0, 6]; // gubuk Ibu (pintu menghadap pantai/-z)
 export const HUT2_POS: V3 = [4.5, 0, 7]; // gubuk tetangga
 export const STONE_POS: V3 = [0.8, 0, -1.2]; // batu berlutut — PERSIS di titik Malin berlutut membatu (kontinuitas S11->S12)
-export const NET_POS: V3 = [-1.3, 0, 5.0]; // jala yang dijahit Ibu (di sampingnya)
+export const NET_POS: V3 = [-1.3, 0, 4.0]; // jala yang dijahit Ibu (v2: digeser 1 m ke selatan, menjauhi dinding gubuk — Ibu bisa berdiri di sampingnya tanpa tertutup sudut gubuk)
 export const SHIP_SMALL_HOME: V3 = [-4, 0, -16]; // kapal layar kecil (berangkat)
 export const SHIP_BIG_HOME: V3 = [0, 0, -18]; // kapal dagang besar (kembali)
 export const BEACH_CALL: V3 = [0, 0, -1]; // titik Ibu memanggil di pantai
@@ -32,31 +32,130 @@ export const malinMudaPos = (f: number): V3 => {
 };
 export const malinMudaWalking = (f: number) => f >= 557 && f < 621;
 export const malinMudaPhase = (f: number) => (f - 557) / 12;
-// Malin muda menghadap kamera saat pamit (rotasi 0), membelakangi kamera saat berjalan ke laut / menatap batu (rotasi PI)
-export const malinMudaRotY = (f: number) => (f < 192 || f >= 557 ? Math.PI : 0);
+// Malin muda: S1 membelakangi kamera menatap batu; S2-S3 menghadap Ibu (-1,25 rad — profil
+// kuat, bukan 90° penuh: kepala kotak pada 90° murni menyembunyikan wajah total);
+// saat D1 (f385-456) menoleh setengah ke kamera (-0,75 rad, three-quarter ~37°);
+// berjalan ke laut membelakangi kamera.
+export const malinMudaRotY = (f: number) => {
+  if (f < 192 || f >= 557) return Math.PI;
+  const base = -1.25;
+  if (f < 373) return base;
+  if (f < 397) return yawEase(f, 373, 397, base, -0.75);
+  if (f < 456) return -0.75;
+  if (f < 480) return yawEase(f, 456, 480, -0.75, base);
+  return base;
+};
+
+// ---------------- arah hadap (yaw, rotasi Y) — v2: bervariasi, natural seperti film ----------------
+// Konvensi: yaw 0 = menghadap +z (ke arah kamera bila kamera di +z), PI = membelakangi kamera,
+// +PI/2 = menghadap +x, -PI/2 = menghadap -x. Tokoh kotak 3D: putar badan (bukan kartu),
+// jadi yang berjalan menjauh menunjukkan punggung (ATURAN MOONWALK terpenuhi).
+// Pembicara menoleh SETENGAH ke kamera (three-quarter, ~0,5 rad) HANYA saat dialognya,
+// lalu kembali menghadap lawan bicara — lip-sync tetap terbaca tanpa semua menghadap depan.
+export const yawEase = (f: number, f0: number, f1: number, from: number, to: number) =>
+  from + (to - from) * smooth((f - f0) / (f1 - f0));
+
+// Ibu: S2 menjahit menghadap jala (0,93 rad — profil ke kamera, tangan di atas jala);
+// S3 menghadap Malin (1,25 rad), menoleh setengah ke kamera saat D2 (f466-547);
+// S4 melambai mengikuti kapal (membelakangi kamera); S5-S6 menunggu menghadap laut/kapal
+// (membelakangi kamera); S7 berlari ke kapal lalu berbalik memanggil (three-quarter 0,5 rad);
+// S8 menghadap pasangan (1,5 rad, profil); S9 kutukan three-quarter (0,6 rad);
+// S10 membelakangi kamera menatap Malin/bad ai.
+export const ibuRotY = (f: number) => {
+  if (f < 408) return Math.PI / 2; // S2: menghadap timur ke arah jala (profil ke kamera)
+  if (f < 557) { // S3 pamit: menghadap Malin, menoleh saat D2
+    const base = 1.25;
+    if (f < 454) return base;
+    if (f < 478) return yawEase(f, 454, 478, base, 0.75);
+    if (f < 547) return 0.75;
+    if (f < 557) return yawEase(f, 547, 557, 0.75, base);
+    return base;
+  }
+  if (f < 816) return -2.84 + 0.29 * smooth((f - 557) / 259); // S4: melambai mengikuti kapal
+  if (f < 1296) return Math.PI; // S5-S6: menunggu menghadap laut (membelakangi kamera)
+  if (f < 1330) return -2.23; // S7: berlari ke arah kapal (membelakangi kamera)
+  if (f < 1352) return yawEase(f, 1330, 1352, -2.23, 0.5); // berbalik memanggil
+  if (f < 1416) return 0.5; // S7 akhir: memanggil, three-quarter ke kamera
+  if (f < 1680) return 1.5; // S8: menghadap pasangan (profil ke kamera)
+  if (f < 1932) return 0.6; // S9: kutukan, three-quarter (tidak frontal penuh)
+  return 2.85; // S10: membelakangi kamera menatap Malin/bad ai
+};
+
+// Malin dewasa: S5 menghitung emas menghadap peti (1,29 rad, three-quarter, kepala menunduk);
+// S6 di kapal menghadap desa (+z); S8 menghadap Istri (-1,25 rad), menoleh saat D8 (f1540-1610);
+// S9 menghadap Ibu (hampir frontal tapi menatap Ibu di foreground); S10 membelakangi kamera
+// menghadap badai, menoleh saat memohon D10 (f2043-2116); S11 membatu menghadap laut.
+export const malinDewasaRotY = (f: number) => {
+  if (f < 1048) return 1.29; // S5: menghadap peti emas
+  if (f < 1416) return 0; // S6: di kapal menghadap desa
+  if (f < 1680) { // S8 penolakan: menghadap Istri, menoleh saat D8
+    const base = -1.25;
+    if (f < 1528) return base;
+    if (f < 1552) return yawEase(f, 1528, 1552, base, -0.75);
+    if (f < 1610) return -0.75;
+    if (f < 1634) return yawEase(f, 1610, 1634, -0.75, base);
+    return base;
+  }
+  if (f < 1932) return -0.29; // S9: menghadap Ibu (foreground)
+  if (f < 2043) return Math.PI; // S10: berdiri menghadap badai (membelakangi kamera)
+  if (f < 2075) return yawEase(f, 2043, 2075, Math.PI, 0.4); // berlutut + berbalik memohon
+  if (f < 2116) return 0.4; // D10: memohon, three-quarter ke kamera
+  if (f < 2160) return yawEase(f, 2116, 2160, 0.4, Math.PI); // kembali menghadap laut
+  return Math.PI; // S10 akhir + S11: membatu menghadap laut
+};
+
+// Istri: S6 di kapal menghadap desa (+z); S8 menghadap Malin (1,25 rad), menoleh saat D7 (f1428-1530);
+// S9 menghadap Ibu; S10 menghadap Malin (profil ke kamera).
+export const istriRotY = (f: number) => {
+  if (f < 1416) return 0; // S6: di kapal menghadap desa
+  if (f < 1680) { // S8: menghadap Malin, menoleh saat D7
+    const base = 1.25;
+    if (f < 1440) return yawEase(f, 1416, 1440, base, 0.75);
+    if (f < 1530) return 0.75;
+    if (f < 1554) return yawEase(f, 1530, 1554, 0.75, base);
+    return base;
+  }
+  if (f < 1932) return 0.24; // S9: menghadap Ibu (foreground)
+  return 1.71; // S10: menghadap Malin (profil ke kamera)
+};
+
+// Penduduk (S6): membelakangi kamera menghadap kapal; saat D5 (f1169-1221) keduanya
+// saling menghadap (1,25 rad — profil kuat, wajah masih terbaca three-quarter, bukan 90° penuh).
+export const pendudukRotY = (i: number, f: number) => {
+  const base = Math.PI;
+  const to = i === 0 ? 1.25 : -1.25;
+  if (f < 1157) return base;
+  if (f < 1181) return yawEase(f, 1157, 1181, base, to);
+  if (f < 1221) return to;
+  if (f < 1245) return yawEase(f, 1221, 1245, to, base);
+  return base;
+};
 // Ibu: di gubuk (S2), di samping Malin saat pamit (S3), di pantai melambai (S4), berlari ke pantai (S7 awal), berdiri memanggil (S7 akhir), kutukan (S9)
-export const IBU_HUT: V3 = [-2.2, 0, 4.0]; // di depan pintu gubuk (di luar dinding), di samping meja jala
+export const IBU_HUT: V3 = [-2.1, 0, 4.0]; // di depan gubuk, di BARAT meja jala — menghadap timur (profil ke kamera), tangan sampai di atas jala
 export const ibuPos = (f: number): V3 => {
   if (f < 408) return IBU_HUT;
   if (f < 557) return [-0.7, 0, 3.6]; // pamit: di samping Malin muda (two-shot)
   if (f < 816) return [0.5, 0, -1.5]; // pantai, melambai ke kapal
   if (f < 1296) return [0.3, 0, -1.2]; // menunggu di pantai (tengah, di depan kapal)
-  if (f < 1380) { // berlari ke arah kamera/pantai depan
-    const u = smooth((f - 1296) / 84);
-    return [-1.5 + 1.5 * u, 0, -1 + 2.5 * u];
+  if (f < 1330) { // v2: berlari ke arah kapal (membelakangi kamera), bukan ke arah kamera
+    const u = smooth((f - 1296) / 34);
+    return [0.3 - 1.8 * u, 0, -1.2 - 1.4 * u];
   }
-  if (f < 1416) return [0, 0, 1.5]; // berdiri memanggil (akhir S7)
+  if (f < 1416) return [-1.5, 0, -2.6]; // berhenti, berbalik memanggil (akhir S7)
   if (f < 1680) return [-1.0, 0, -0.3]; // S8 penolakan: di samping Malin, tidak menghalangi kamera
   return [0, 0, 1.5]; // kutukan (S9) + badai (S10)
 };
-export const ibuRunning = (f: number) => f >= 1296 && f < 1380;
-export const ibuRunPhase = (f: number) => (f - 1296) / 10;
+export const ibuRunning = (f: number) => f >= 1296 && f < 1330;
+export const ibuRunPhase = (f: number) => (f - 1296) / 9;
 export const ibuWaving = (f: number) => f >= 557 && f < 816;
 // Nahkoda: di kapal kecil (S4)
 export const nahkodaPos = (): V3 => [-4, 1.6, -16];
 // Malin dewasa: di dek kapal besar (S5-S6), lalu di pantai saat penolakan (S8), berlutut (S10)
 export const malinDewasaPos = (f: number): V3 => {
-  if (f < 1416) return [-0.1, 1.6, -18]; // dek kapal besar (di samping peti emas)
+  // Dek kapal besar. S5 (f<1048): x=-0,5 — 0,5 m di kiri tiang, tiang tak menembus kepala
+  // saat close-up hitung emas. S6-S7: x=-0,1 (posisi v1) supaya ia terlihat di samping
+  // Istri — lompatan 0,4 m tersembunyi oleh cut S5→S6 (kamera berganti total).
+  if (f < 1416) return [f < 1048 ? -0.5 : -0.1, 1.6, -18];
   return [0.8, 0, -1.2]; // pantai (penolakan, kutukan, badai, berlutut membatu)
 };
 // Istri: di dek kapal (S6), di pantai saat penolakan (S8)
@@ -160,9 +259,10 @@ const dolly = (pos: V3, look: V3, k: number, rest: Partial<Cam> = {}): Shot =>
 // S1 hook: Malin muda membelakangi kamera menatap batu berlutut, laut di belakang
 // (kamera dari kanan supaya Malin tidak menutupi batu)
 const S1 = (f: number) => dolly([3.0, 2.0, 6.5], [0.5, 0.8, -1.2], pushK(f, 0, 0.0012), { fov: 54 });
-// S2 desa: Ibu menjahit jala di depan gubuk (kamera dari arah pantai, Ibu menghadap kamera)
-const S2 = (f: number) => dolly([0.5, 1.8, 0.5], [-2.2, 1.0, 4.2], pushK(f, 192, 0.0014), { fov: 50 });
-// S3 pamit: two-shot Ibu + Malin muda menghadap kamera
+// S2 desa: Ibu menjahit jala di depan gubuk (v2: Ibu menghadap jala — profil ke kamera;
+// kamera digeser sedikit supaya jala ikut masuk frame, bukan terpotong di tepi)
+const S2 = (f: number) => dolly([0.8, 1.8, 0.2], [-1.7, 1.0, 4.0], pushK(f, 192, 0.0014), { fov: 50 });
+// S3 pamit: two-shot Ibu + Malin muda SALING MENGHADAP (profil); yang bicara menoleh setengah ke kamera
 const S3 = (f: number) => dolly([0, 1.7, 9.0], [-0.1, 1.2, 3.5], pushK(f, 408, 0.0018), { fov: 46 });
 // S4 berangkat: kapal kecil di laut + Ibu melambai di pantai (wide)
 const S4 = (f: number) => dolly([3, 2.6, 6], [-2, 1.2, -14], pushK(f, 557, 0.0012), { fov: 56 });
@@ -170,12 +270,16 @@ const S4 = (f: number) => dolly([3, 2.6, 6], [-2, 1.2, -14], pushK(f, 557, 0.001
 const S5 = (f: number) => dolly([5.0, 3.4, -21.0], [-0.2, 2.0, -28], pushK(f, 816, 0.0012), { fov: 44 });
 // S6 kembali: kapal besar mendekat + penduduk di pantai (wide)
 const S6 = (f: number) => dolly([0, 2.8, 10.5], [0, 1.4, -12], pushK(f, 1048, 0.0008), { fov: 58 });
-// S7 Ibu memanggil: close-up Ibu berlari ke arah kamera lalu berdiri memanggil
-const S7 = (f: number) => dolly([0, 1.7, 6.5], [0, 1.3, 0.5], pushK(f, 1296, 0.002), { fov: 44 });
-// S8 penolakan: three-shot Ibu + Istri + Malin dewasa menghadap kamera
+// S7 Ibu memanggil: v2 — Ibu berlari ke arah kapal (membelakangi kamera), berhenti,
+// berbalik three-quarter ke kamera saat memanggil (D6); kamera mundur sedikit supaya
+// awal lari tidak terpotong tepi frame
+const S7 = (f: number) => dolly([-0.5, 1.7, 5.0], [-0.7, 1.3, -2.0], pushK(f, 1296, 0.002), { fov: 44 });
+// S8 penolakan: three-shot — Istri + Malin SALING MENGHADAP (profil), Ibu menghadap mereka (profil);
+// yang bicara menoleh setengah ke kamera
 const S8 = (f: number) => dolly([0.2, 1.8, 7.2], [-0.1, 1.3, -1.0], pushK(f, 1416, 0.0018), { fov: 46 });
-// S9 kutukan: close-up Ibu, langit menggelap
-const S9 = (f: number) => dolly([0, 1.7, 5.0], [0, 1.2, 1.2], pushK(f, 1680, 0.0016), { fov: 42 });
+// S9 kutukan: close-up Ibu, langit menggelap (v2: kamera digeser +x 0,9 m — tiang kapal
+// tak lagi sejajar di belakang kepala Ibu; fov 50 supaya Malin + Istri tetap masuk frame)
+const S9 = (f: number) => dolly([0.9, 1.7, 5.0], [0, 1.2, 1.2], pushK(f, 1680, 0.0016), { fov: 50 });
 // S10 badai: wide laut gelap + kapal oleng + Malin berlutut di pantai
 const S10 = (f: number) => dolly([0, 3.2, 10], [0, 1.6, -18], pushK(f, 1932, 0.001), { fov: 58 });
 // S11 berlutut: medium Malin berlutut membatu di pantai (kamera rendah, sejajar wajah menunduk)

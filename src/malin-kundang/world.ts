@@ -13,7 +13,7 @@ import {
   FPS, camAt, gradeAt, isFlash,
   HUT_POS, HUT2_POS, STONE_POS, NET_POS, SHIP_SMALL_HOME, SHIP_BIG_HOME,
   malinMudaPos, malinMudaWalking, malinMudaPhase, malinMudaRotY,
-  ibuPos, ibuRunning, ibuRunPhase, ibuWaving,
+  ibuPos, ibuRunning, ibuRunPhase, ibuWaving, ibuRotY, malinDewasaRotY, istriRotY, pendudukRotY,
   malinDewasaPos, istriPos, PENDUDUK_POS,
   shipSmallPos, shipBigPos, shipBigRoll,
   malinKneel, malinStone, wavePhase,
@@ -462,7 +462,8 @@ export class World {
     this.istri.root.visible = f < 2273;
     // Malin dewasa yang membatu diganti batu prop di S12 (titik sama, jangan tumpang tindih).
     this.malinDewasa.root.visible = f < 2640;
-    // Malin muda: pamit (hadap kamera) lalu berjalan ke laut (membelakangi kamera, rotasi PI)
+    // Malin muda: pamit menghadap Ibu (profil, menoleh setengah ke kamera saat D1),
+    // lalu berjalan ke laut (membelakangi kamera, rotasi PI)
     // Setelah berlayar (f>=624) dia tidak lagi di pantai — disembunyikan.
     this.malinMuda.root.visible = f < 624;
     const mmP = malinMudaPos(f);
@@ -482,11 +483,12 @@ export class World {
       this.malinMuda.armL.rotation.x = -0.05;
       this.malinMuda.armR.rotation.x = -0.05;
     }
-    // Ibu: di gubuk menjahit (S2), melambai (S4), berlari (S7), memanggil + mengutuk (S7-S9)
+    // Ibu: di gubuk menjahit (S2, profil ke jala), melambai (S4), berlari (S7),
+    // memanggil + mengutuk (S7-S9) — arah hadap v2 dari ibuRotY (story.ts)
     const ibP = ibuPos(f);
     const ibRun = ibuRunning(f);
     this.ibu.root.position.set(ibP[0], ibRun ? 0.03 * Math.abs(Math.sin(2 * Math.PI * ibuRunPhase(f))) : 0, ibP[2]);
-    this.ibu.root.rotation.y = f < 408 ? Math.PI : 0; // di gubuk menjahit menghadap kamera (arah pantai); di pantai menghadap kamera
+    this.ibu.root.rotation.y = ibuRotY(f);
     this.ibu.setFace(ibuExpr(f), mouthAt(f < 600 ? D2_CUES : f < 1500 ? D6_CUES : D9_CUES, f));
     if (ibRun) {
       const rph = 2 * Math.PI * ibuRunPhase(f);
@@ -525,13 +527,17 @@ export class World {
     const kneel = malinKneel(f);
     const stoneU = malinStone(f);
     this.malinDewasa.root.position.set(mdP[0], deckY - 0.55 * kneel, deckZ);
-    this.malinDewasa.root.rotation.y = onDeck ? 0 : 0;
+    this.malinDewasa.root.rotation.y = malinDewasaRotY(f);
     this.malinDewasa.setFace(malinDewasaExpr(f), mouthAt(f < 1200 ? D4_CUES : f < 1700 ? D8_CUES : D10_CUES, f));
+    // v2: saat memohon (D10, f2043-2116) kepala sedikit terangkat (menengadah ke Ibu/kamera),
+    // bukan menunduk penuh — faktor plea 0..1 mengikuti putaran badan.
+    const plea = f < 2043 ? 0 : f < 2075 ? smooth((f - 2043) / 32) : f < 2116 ? 1 : f < 2160 ? 1 - smooth((f - 2116) / 44) : 0;
     if (kneel > 0) {
       // berlutut: kaki terlipat ke belakang, badan menunduk, lalu membatu (abu-abu)
       this.malinDewasa.legL.rotation.x = -1.3 * kneel;
       this.malinDewasa.legR.rotation.x = -1.3 * kneel;
-      this.malinDewasa.head.rotation.x = 0.28 * kneel; // menunduk
+      this.malinDewasa.head.rotation.x = 0.28 * kneel * (1 - 0.6 * plea); // menunduk, terangkat sedikit saat memohon
+      this.malinDewasa.root.rotation.z = 0; // reset oleng badai begitu berlutut
       this.malinDewasa.armL.rotation.x = -0.2;
       this.malinDewasa.armR.rotation.x = -0.2;
       this.malinDewasa.petrify(stoneU);
@@ -540,24 +546,30 @@ export class World {
       const dip = f >= 940 && f < 1040 ? Math.sin(((f - 940) / 100) * Math.PI * 3) * 0.3 : 0;
       this.malinDewasa.armR.rotation.x = -0.4 - dip;
       this.malinDewasa.armL.rotation.x = -0.3;
+      this.malinDewasa.head.rotation.x = 0.25; // v2: menunduk ke peti emas
       this.malinDewasa.legL.rotation.x = 0;
       this.malinDewasa.legR.rotation.x = 0;
     } else if (storm && f >= 1932) {
       // terhuyung di badai (sebelum berlutut f2043)
       this.malinDewasa.root.rotation.z = 0.08 * Math.sin(t * 3);
+      this.malinDewasa.head.rotation.x = 0;
       this.malinDewasa.armL.rotation.x = -1.2;
       this.malinDewasa.armR.rotation.x = -1.2;
     } else {
       this.malinDewasa.legL.rotation.x = 0;
       this.malinDewasa.legR.rotation.x = 0;
+      this.malinDewasa.head.rotation.x = 0;
+      this.malinDewasa.root.rotation.z = 0;
       this.malinDewasa.armL.rotation.x = -0.05;
       this.malinDewasa.armR.rotation.x = -0.05;
     }
-    // Istri: dek kapal besar (ikut posisi kapal) / pantai
+    // Istri: dek kapal besar (ikut posisi kapal, 0,8 m ke buritan dari Malin — v2: tidak
+    // lagi bersembunyi di belakang Malin/tiang; +2,0 dicoba tapi membuat Istri menutupi
+    // Malin dari kamera S7, jadi kembali ke +0,8) / pantai
     const isP = istriPos(f);
     const isDeck = f < 1416;
-    this.istri.root.position.set(isP[0], isDeck ? 1.6 + bob : 0, isDeck ? bp[2] : isP[2]);
-    this.istri.root.rotation.y = 0;
+    this.istri.root.position.set(isP[0], isDeck ? 1.6 + bob : 0, isDeck ? bp[2] + 0.8 : isP[2]);
+    this.istri.root.rotation.y = istriRotY(f);
     this.istri.setFace(istriExpr(f), mouthAt(D7_CUES, f));
     this.istri.armL.rotation.x = -0.05;
     this.istri.armR.rotation.x = -0.05;
@@ -566,7 +578,7 @@ export class World {
       const pp = PENDUDUK_POS[i];
       p.root.visible = f >= 1048 && f < 1296;
       p.root.position.set(pp[0], 0, pp[2]);
-      p.root.rotation.y = 0;
+      p.root.rotation.y = pendudukRotY(i, f); // v2: membelakangi kamera menghadap kapal; saling menghadap saat D5
       p.setFace(pendudukExpr(), mouthAt(i === 0 ? D5_CUES : [], f));
       p.armR.rotation.x = f >= 1048 && f < 1296 ? -2.2 + 0.3 * Math.sin(t * 5 + i) : -0.05; // melambai menyambut
       p.armL.rotation.x = -0.05;
