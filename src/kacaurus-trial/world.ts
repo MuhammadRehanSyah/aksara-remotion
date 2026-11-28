@@ -7,6 +7,7 @@ import { Batch, boxGeo, V, lam } from "./build";
 import { ctex, planksHD } from "./paint";
 import { NOINK } from "./ink";
 import { BlockyChar } from "./blocky";
+import { BAPAK_CUES, ANAK_CUES, mouthAt } from "./lipsync";
 import {
   FPS, SHOTS, camAt, BAPAK_POS, ANAK_POS, COUNTER, LAMP_POS, CUP_POS, CUP2_POS, MONEY_POS,
   coinVisible, bapakCountArm, anakWalking, anakWalkPhase, anakPutCup, anakGesture,
@@ -305,7 +306,8 @@ export class World {
     this.lamp.rotation.z = lampSway(f);
     this.lampLight.intensity = 12 * (1 + 0.03 * Math.sin(t * 7.3) + 0.02 * Math.sin(t * 13.1));
     // ---- Bapak: di belakang konter, menghitung koin (shot B), menoleh ke Anak (shot C), angguk + senyum (shot D) ----
-    this.bapak.setExpr(bapakExpr(f));
+    // v2: mulut lip-sync Rhubarb (BAPAK_CUES) — hanya saat bicara (L1 f120-167, L3 f504-552); di luar itu "X" = mulut default ekspresi.
+    this.bapak.setFace(bapakExpr(f), mouthAt(BAPAK_CUES, f));
     this.bapak.armR.rotation.x = bapakCountArm(f);
     this.bapak.armL.rotation.x = -0.05 + 0.02 * Math.sin(t * 1.5);
     this.bapak.head.rotation.x = bapakNod(f);
@@ -319,7 +321,8 @@ export class World {
       walking ? 0.02 * Math.abs(Math.sin(2 * Math.PI * anakWalkPhase(f))) : 0,
       ap[2]
     );
-    this.anak.setExpr(anakExpr());
+    // v2: mulut lip-sync Rhubarb (ANAK_CUES) — hanya saat bicara (L2 f288-383).
+    this.anak.setFace(anakExpr(), mouthAt(ANAK_CUES, f));
     // menghadap: saat jalan menghadap -x, setelah berhenti berputar 3/4 ke arah Bapak/kamera
     const turnU = smooth((f - 360) / 24);
     this.anak.root.rotation.y = -Math.PI / 2 + (-0.45 + Math.PI / 2) * turnU;

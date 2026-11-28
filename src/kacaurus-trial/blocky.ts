@@ -5,11 +5,14 @@ import * as THREE from "three";
 import { ctex } from "./paint";
 import { lam } from "./build";
 import type { Expr } from "./story";
+import type { Viseme } from "./lipsync";
 
 const INK = "#241726";
+const VISEMES: Viseme[] = ["A", "B", "C", "D", "E", "F", "G", "H", "X"];
 
-/** Gambar wajah 256x256 pada kanvas: latar kulit + alis/mata/mulut per ekspresi (+ kumis Bapak). */
-const faceTexture = (key: string, expr: Expr, skin: string, mustache: boolean) =>
+/** Gambar wajah 256x256 pada kanvas: latar kulit + alis/mata/mulut per ekspresi (+ kumis Bapak).
+ * Mulut: "X" = mulut default ekspresi; A–H = bentuk viseme Rhubarb (lip-sync v2). */
+const faceTexture = (key: string, expr: Expr, skin: string, mustache: boolean, mouthV: Viseme) =>
   ctex(key, 256, 256, (g) => {
     g.fillStyle = skin;
     g.fillRect(0, 0, 256, 256);
@@ -72,6 +75,59 @@ const faceTexture = (key: string, expr: Expr, skin: string, mustache: boolean) =
       }
       g.stroke();
     };
+    const mouthViseme = (v: Viseme) => {
+      // "X" = mulut default ekspresi (seperti v1); A–H = viseme Rhubarb.
+      if (v === "X") {
+        if (expr === "worried") mouth("frown");
+        else if (expr === "smile") mouth("smile");
+        else if (expr === "surprised") mouth("open");
+        else mouth("straight");
+        return;
+      }
+      g.strokeStyle = INK;
+      const fillDark = () => { g.fillStyle = "#5a1e28"; };
+      switch (v) {
+        case "A": // tutup (P/B/M): garis lurus
+          g.lineWidth = 9;
+          g.beginPath(); g.moveTo(106, 184); g.lineTo(150, 184); g.stroke();
+          break;
+        case "B": // agak terbuka: celah kecil
+          fillDark();
+          g.beginPath(); g.ellipse(128, 184, 13, 4, 0, 0, Math.PI * 2); g.fill();
+          break;
+        case "C": // terbuka lebar-senyum (E)
+          fillDark();
+          g.beginPath(); g.ellipse(128, 184, 23, 11, 0, 0, Math.PI * 2); g.fill();
+          break;
+        case "D": // terbuka lebar (AA)
+          fillDark();
+          g.beginPath(); g.ellipse(128, 188, 16, 21, 0, 0, Math.PI * 2); g.fill();
+          break;
+        case "E": // bulat (O)
+          fillDark();
+          g.beginPath(); g.arc(128, 186, 13, 0, Math.PI * 2); g.fill();
+          break;
+        case "F": // bulat kecil (U)
+          fillDark();
+          g.beginPath(); g.arc(128, 185, 8.5, 0, Math.PI * 2); g.fill();
+          break;
+        case "G": // gigi + bibir bawah (F/V)
+          g.fillStyle = "#f4f1ea";
+          g.fillRect(108, 172, 40, 13);
+          g.lineWidth = 3;
+          g.strokeRect(108, 172, 40, 13);
+          g.beginPath(); g.moveTo(128, 172); g.lineTo(128, 185); g.stroke();
+          g.lineWidth = 6;
+          g.beginPath(); g.moveTo(110, 192); g.lineTo(146, 192); g.stroke();
+          break;
+        case "H": // lidah naik (L)
+          fillDark();
+          g.beginPath(); g.ellipse(128, 186, 15, 14, 0, 0, Math.PI * 2); g.fill();
+          g.fillStyle = "#d98a8a";
+          g.beginPath(); g.ellipse(128, 190, 10, 7, 0, 0, Math.PI * 2); g.fill();
+          break;
+      }
+    };
     switch (expr) {
       case "worried":
         // alis miring ke dalam (ujung dalam turun), mata lebar, mulut cemberut kecil
@@ -79,7 +135,7 @@ const faceTexture = (key: string, expr: Expr, skin: string, mustache: boolean) =
         brow(exR, 74, -6, 6);
         wideEye(exL, eyeY);
         wideEye(exR, eyeY);
-        mouth("frown");
+        mouthViseme(mouthV);
         break;
       case "smile":
         // alis naik, mata senyum (busur), mulut senyum lebar
@@ -87,21 +143,21 @@ const faceTexture = (key: string, expr: Expr, skin: string, mustache: boolean) =
         brow(exR, 70, -8, -4);
         happyEye(exL, eyeY);
         happyEye(exR, eyeY);
-        mouth("smile");
+        mouthViseme(mouthV);
         break;
       case "surprised":
         brow(exL, 66, -8, -10);
         brow(exR, 66, -10, -8);
         wideEye(exL, eyeY);
         wideEye(exR, eyeY);
-        mouth("open");
+        mouthViseme(mouthV);
         break;
       default: // neutral
         brow(exL, 72, 0, -2);
         brow(exR, 72, -2, 0);
         dotEye(exL, eyeY);
         dotEye(exR, eyeY);
-        mouth("straight");
+        mouthViseme(mouthV);
     }
     if (mustache) {
       // kumis abu-abu: dua sapuan tebal di bawah hidung
@@ -137,8 +193,9 @@ export class BlockyChar {
   armR = new THREE.Group();
   legL = new THREE.Group();
   legR = new THREE.Group();
-  private faceMats: Record<Expr, THREE.MeshLambertMaterial>;
+  private faceMats: Record<Expr, Record<Viseme, THREE.MeshLambertMaterial>>;
   private expr: Expr = "neutral";
+  private mouth: Viseme = "X";
 
   constructor(o: CharOpts) {
     const s = o.scale ?? 1;
@@ -146,13 +203,17 @@ export class BlockyChar {
     const shirtM = lam(`shirt_${o.name}`, () => ({ color: o.shirt }));
     const pantsM = lam(`pants_${o.name}`, () => ({ color: o.pants }));
     const hairM = lam(`hair_${o.name}`, () => ({ color: o.hairColor }));
-    // tekstur wajah per ekspresi (sisi depan kepala)
+    // tekstur wajah per ekspresi x bentuk mulut (sisi depan kepala).
+    // 4 ekspresi x 9 viseme = 36 tekstur 256x256 per tokoh (dibuat sekali di awal).
     const exprs: Expr[] = ["neutral", "worried", "smile", "surprised"];
-    this.faceMats = {} as Record<Expr, THREE.MeshLambertMaterial>;
+    this.faceMats = {} as Record<Expr, Record<Viseme, THREE.MeshLambertMaterial>>;
     for (const e of exprs) {
-      this.faceMats[e] = new THREE.MeshLambertMaterial({
-        map: faceTexture(`face_${o.name}_${e}`, e, o.skin, !!o.mustache),
-      });
+      this.faceMats[e] = {} as Record<Viseme, THREE.MeshLambertMaterial>;
+      for (const m of VISEMES) {
+        this.faceMats[e][m] = new THREE.MeshLambertMaterial({
+          map: faceTexture(`face_${o.name}_${e}_${m}`, e, o.skin, !!o.mustache, m),
+        });
+      }
     }
     // ---- kaki (pivot di pinggul y=0.72) ----
     const legGeo = new THREE.BoxGeometry(0.15, 0.72, 0.16);
@@ -194,7 +255,7 @@ export class BlockyChar {
     this.head.position.y = 1.3;
     const headGeo = new THREE.BoxGeometry(0.44, 0.4, 0.4);
     // urutan material BoxGeometry: +x, -x, +y, -y, +z (depan = wajah), -z
-    const head = new THREE.Mesh(headGeo, [skinM, skinM, skinM, skinM, this.faceMats.neutral, skinM]);
+    const head = new THREE.Mesh(headGeo, [skinM, skinM, skinM, skinM, this.faceMats.neutral.X, skinM]);
     head.position.y = 0.2;
     head.castShadow = true;
     this.head.add(head);
@@ -230,12 +291,18 @@ export class BlockyChar {
     this.root.scale.setScalar(s);
   }
 
-  setExpr(e: Expr) {
-    if (e === this.expr) return;
+  /** Ganti wajah: ekspresi (alis/mata) + bentuk mulut viseme (lip-sync). "X" = mulut default ekspresi. */
+  setFace(e: Expr, m: Viseme) {
+    if (e === this.expr && m === this.mouth) return;
     this.expr = e;
+    this.mouth = m;
     const head = this.head.children[0] as THREE.Mesh;
     const mats = head.material as THREE.Material[];
-    mats[4] = this.faceMats[e];
+    mats[4] = this.faceMats[e][m];
     head.material = mats;
+  }
+
+  setExpr(e: Expr) {
+    this.setFace(e, "X");
   }
 }

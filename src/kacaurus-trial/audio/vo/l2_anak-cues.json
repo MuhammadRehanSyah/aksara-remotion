@@ -1,0 +1,151 @@
+{
+  "fps": 24,
+  "start": 12.0,
+  "cues": [
+    {
+      "frame": 288,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 293,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 298,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 301,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 303,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 308,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 310,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 313,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 314,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 316,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 319,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 320,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 322,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 324,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 336,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 339,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 340,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 342,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 344,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 345,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 346,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 348,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 349,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 353,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 356,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 359,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 364,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 366,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 379,
+      "mouth": "X",
+      "label": "diam/netral"
+    }
+  ]
+}

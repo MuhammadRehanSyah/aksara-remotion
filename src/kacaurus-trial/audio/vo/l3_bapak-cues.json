@@ -1,0 +1,66 @@
+{
+  "fps": 24,
+  "start": 21.0,
+  "cues": [
+    {
+      "frame": 504,
+      "mouth": "X",
+      "label": "diam/netral"
+    },
+    {
+      "frame": 511,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 512,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 514,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 517,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 530,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 532,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 533,
+      "mouth": "A",
+      "label": "tutup (P/B/M)"
+    },
+    {
+      "frame": 535,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 539,
+      "mouth": "C",
+      "label": "terbuka lebar-senyum (E)"
+    },
+    {
+      "frame": 544,
+      "mouth": "B",
+      "label": "agak terbuka"
+    },
+    {
+      "frame": 546,
+      "mouth": "X",
+      "label": "diam/netral"
+    }
+  ]
+}
